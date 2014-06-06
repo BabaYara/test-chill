@@ -3,11 +3,17 @@ usage: python -m testchill [-h] [-w working-directory] [-R rose-home]
                            {local,chill-testcase,build-chill-testcase,batch}  
                            ...  
   
-To test a local working copy of chill:  
---------------------------------------  
-    Set OMEGAHOME  
-    ```python -m testchill local <path-to-chill>```  
-    
+To test a local working copy of chill (from the development branch):  
+--------------------------------------------------------------------  
+- Set $OMEGAHOME and compile omega.  
+- Run
+  ```sh
+  python -m testchill local <path-to-chill>
+  ```  
+  This creates a temporary directory where it builds chill in each
+  configuration and tests it.
+
+
 optional arguments:  
   -h, --help            show this help message and exit  
   -w working-directory, --working-dir working-directory  
