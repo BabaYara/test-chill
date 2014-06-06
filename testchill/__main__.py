@@ -5,6 +5,7 @@ import logging
 import os
 import pickle
 import sys
+import textwrap
 
 from . import chill
 from . import test
@@ -144,10 +145,6 @@ def add_chill_run_args(arg_parser):
     """
     arg_parser.add_argument('chill_script', help='Chill script file.', metavar='chill-script')
     arg_parser.add_argument('chill_src', help='Chill source file.', metavar='chill-src')
-    #arg_parser.add_argument('--no-compile-src', action='store_false', dest='chill_test_compile_src', default=True, help='Do not compile source file')
-    #arg_parser.add_argument('--no-run-script', action='store_false', dest='chill_test_run_script', default=True, help='Do not run the script')
-    #arg_parser.add_argument('--no-compile-generated-src', action='store_false', dest='chill_test_compile_gensrc', default=True, help='Do not compile the generated source code')
-    #arg_parser.add_argument('--no-check-run-script', action='store_false', dest='chill_test_check_run_script', default=True)
     add_boolean_option(arg_parser, 'compile-src', dest='chill_test_compile_src', default=True, help_on='Compile source file.', help_off='Do not compile source file.')
     add_boolean_option(arg_parser, 'run-script', dest='chill_test_run_script', default=True, help_on='Run chill script.', help_off='Do not run chill script.')
     add_boolean_option(arg_parser, 'compile-gensrc', dest='chill_test_compile_gensrc', default=True, help_on='Compile generated source file', help_off='Do not compile generated source file.')
@@ -233,7 +230,13 @@ def make_argparser():
     """
     arg_parser = argparse.ArgumentParser(
         prog='python -m testchill',
-        description='')
+        description=textwrap.dedent('''\
+            To test a local working copy of chill:
+            --------------------------------------
+                python -m testchill local <path-to-chill>   
+        '''),
+        epilog='EPILOG',
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     
     add_global_args(arg_parser)
     add_commands(arg_parser)
