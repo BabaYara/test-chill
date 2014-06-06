@@ -6,7 +6,7 @@ usage: python -m testchill [-h] [-w working-directory] [-R rose-home]
 To test a local working copy of chill:  
 --------------------------------------  
     Set OMEGAHOME  
-    `python -m testchill local <path-to-chill>`  
+    ```python -m testchill local <path-to-chill>```  
     
 optional arguments:  
   -h, --help            show this help message and exit  
