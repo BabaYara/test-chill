@@ -230,12 +230,15 @@ def make_argparser():
     """
     arg_parser = argparse.ArgumentParser(
         prog='python -m testchill',
-        description=textwrap.dedent('''\
-            To test a local working copy of chill:
-            --------------------------------------
-                python -m testchill local <path-to-chill>   
+        epilog=textwrap.dedent('''\
+            
+            To test a local working copy of chill (from the development branch):
+            --------------------------------------------------------------------  
+            - Set $OMEGAHOME and compile omega.
+            - Run `python -m testchill local <path-to-chill>`
+            
         '''),
-        epilog='EPILOG',
+        description='DESCRIPTION',
         formatter_class=argparse.RawDescriptionHelpFormatter)
     
     add_global_args(arg_parser)
