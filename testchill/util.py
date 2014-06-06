@@ -9,8 +9,8 @@ import tempfile
 
 
 
-#logging.basicConfig(filename='testchill.log', level=logging.INFO, filemode='w')
-logging.basicConfig(level=logging.INFO)
+logging.basicConfig(filename='testchill.log', level=logging.DEBUG, filemode='w')
+#logging.basicConfig(level=logging.INFO)
 
 python_version = sysconfig.get_python_version()
 python_version_major = int(sysconfig.get_python_version().split('.')[0])

@@ -8,6 +8,7 @@ import sys
 import textwrap
 
 from . import chill
+from . import omega
 from . import test
 from . import util
 
@@ -22,6 +23,7 @@ def make_local(argsns, arg_parser):
     util.mkdir_p(os.path.join(os.getcwd(), '.staging'), temp=True)
     argsns.wd = os.path.join(os.getcwd(), '.staging/wd')
     argsns.bin_dir = os.path.join(os.getcwd(), '.staging/bin')
+    argsns.chill_tc_dir = os.path.join(os.getcwd(), 'test-cases') # formally from the commandline
     
     util.mkdir_p(argsns.wd)
     util.mkdir_p(argsns.bin_dir)
@@ -35,6 +37,50 @@ def make_local(argsns, arg_parser):
         batch_file = os.path.join(argsns.chill_tc_dir, config.name() + '.tclist')
         for tc in make_batch_testcaselist(argsns, arg_parser, batch_file):
             yield tc
+
+def make_repo(argsns, arg_parser):
+    """
+    Make the repo test case list. A convinience function for testing chill from the repsitory.
+    @params argsns Command line arguments
+    @params arg_parser The ArgumentParser object
+    """
+    util.mkdir_p(os.path.join(os.getcwd(), '.staging'), temp=True)
+    argsns.bin_dir = os.path.join(os.getcwd(), '.staging/bin')
+    argsns.repo_dir = os.path.join(os.getcwd(), '.staging/repo')
+    argsns.chill_tc_dir = os.path.join(os.getcwd(), 'test-cases') # formally from the commandline
+    argsns.wd = os.path.join(os.getcwd(), '.staging/wd')
+    
+    util.mkdir_p(argsns.bin_dir)
+    util.mkdir_p(argsns.repo_dir)
+    util.mkdir_p(argsns.wd)
+    
+    #TODO: Should these be hard coded?
+    repo_root = 'shell.cs.utah.edu/uusoc/facility/res/hallresearch/svn_repo/resRepo/projects'
+    for version in ['release', 'dev']:
+        new_args = util.copy(argsns)
+        if version == 'dev':
+            chill_repo = 'svn+ssh://{}@{}/chill/branches/cuda-chill-rose'.format(new_args.svnuser, repo_root)
+            chill_repo_name = 'chill'
+            omega_repo = 'svn+ssh://{}@{}/omega/branches/cuda-omega-rose'.format(new_args.svnuser, repo_root)
+            omega_repo_name = 'omega'
+        elif version == 'release':
+            chill_repo = 'svn+ssh://{}@{}/chill/release'.format(new_args.svnuser, repo_root)
+            chill_repo_name = 'chill-release'
+            omega_repo = 'svn+ssh://{}@{}/omega/release'.format(new_args.svnuser, repo_root)
+            omega_repo_name = 'omega-release'
+        new_args.omega_dir = os.path.join(new_args.repo_dir, omega_repo_name)
+        new_args.chill_dir = os.path.join(new_args.repo_dir, chill_repo_name)
+        util.shell('svn', ['export', '--force', omega_repo, new_args.omega_dir])
+        util.shell('svn', ['export', '--force', chill_repo, new_args.chill_dir])
+        # do omega: (just build it for now)
+        yield omega.BuildOmegaTestCase(new_args.omega_dir ,version)
+        # do chill
+        for config in chill.ChillConfig.configs_by_version(new_args.omega_dir, version):
+            yield config.make_build_testcase(new_args.chill_dir, new_args.bin_dir)
+            batch_file = os.path.join(argsns.chill_tc_dir, config.name() + '.tclist')
+            if os.path.exists(batch_file):
+                for tc in make_batch_testcaselist(new_args, arg_parser, batch_file):
+                    yield tc
 
 def make_runchill_testcase(argsns):
     """
@@ -108,9 +154,17 @@ def add_local_args(arg_parser):
     arg_parser.add_argument('-v', '--chill-branch', dest='chill_version', default='dev', choices=['release','dev'])
     # - Testing should consider all interface languages. Will uncomment if testing takes too long
     # arg_parser.add_argument('-i', '--interface-lang', nargs=1, action='append', dest='chill_script_lang_list', choices=['script','lua','python'])
-    arg_parser.add_argument('-t', '--testcase-dir', dest='chill_tc_dir', default=os.path.join(os.getcwd(), 'test-cases/'))
+    # arg_parser.add_argument('-t', '--testcase-dir', dest='chill_tc_dir', default=os.path.join(os.getcwd(), 'test-cases/'))
     arg_parser.set_defaults(wd=os.path.join(os.getcwd(), '.staging/wd'))       # - These don't seem to work
     arg_parser.set_defaults(bin_dir=os.path.join(os.getcwd(), '.staging/bin')) # -
+
+@util.callonce
+def add_repo_args(arg_parser):
+    """
+    Command line arguments for the repo command
+    @param arg_parser The local ArgumentParser object
+    """
+    arg_parser.add_argument('svnuser', metavar='svn-user-name')
 
 def add_chill_common_args(arg_parser):
     """
@@ -161,6 +215,16 @@ def add_local_command(command_group):
     local_arg_parser.set_defaults(func=lambda a, ap: make_local(a, ap))
 
 @util.callonce
+def add_repo_command(command_group):
+    """
+    Add repo to the subcommand group
+    @param command_group the subparser group object
+    """
+    repo_arg_parser = command_group.add_parser('repo')
+    add_repo_args(repo_arg_parser)
+    repo_arg_parser.set_defaults(func=lambda a, ap: make_repo(a, ap))
+
+@util.callonce
 def add_chill_command(command_group):
     """
     Add chill-testcase to the subcommand group
@@ -207,6 +271,7 @@ def add_commands(arg_parser):
     """
     command_group = arg_parser.add_subparsers(title='commands')
     add_local_command(command_group)
+    add_repo_command(command_group)
     add_chill_command(command_group)
     add_buildchill_command(command_group)
     add_batch_command(command_group)

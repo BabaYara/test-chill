@@ -22,15 +22,15 @@ chill-testcase  test-cases/examples/chill/gemv.script             test-cases/exa
 chill-testcase  test-cases/examples/chill/jacobi1.script          test-cases/examples/chill/jacobi1.c
 chill-testcase  test-cases/examples/chill/jacobi2.script          test-cases/examples/chill/jacobi2.c
 chill-testcase  test-cases/examples/chill/qr.script               test-cases/examples/chill/qr.c
-#chill-testcase  test-cases/examples/chill/scalar_test.script      test-cases/examples/chill/scalar_test.c
+#chill-testcase  test-cases/examples/chill/scalar_test.script      test-cases/examples/chill/scalar_test.c      --check-run-script --fail-run-script
 chill-testcase  test-cases/examples/chill/swim.script             test-cases/examples/chill/swim.c
 chill-testcase  test-cases/examples/chill/test_align.script       test-cases/examples/chill/test_align.c
-#chill-testcase  test-cases/examples/chill/test_fusion.script      test-cases/examples/chill/test_fusion.c
-#chill-testcase  test-cases/examples/chill/test_lex_order.script   test-cases/examples/chill/test_lex_order.c
+#chill-testcase  test-cases/examples/chill/test_fusion.script      test-cases/examples/chill/test_fusion.c      --check-run-script --fail-run-script
+#chill-testcase  test-cases/examples/chill/test_lex_order.script   test-cases/examples/chill/test_lex_order.c   --check-run-script --fail-run-script
 chill-testcase  test-cases/examples/chill/test_split.script       test-cases/examples/chill/test_split.c
-#chill-testcase  test-cases/examples/chill/test_split2.script      test-cases/examples/chill/test_split2.c
+#chill-testcase  test-cases/examples/chill/test_split2.script      test-cases/examples/chill/test_split2.c      --check-run-script --fail-run-script
 chill-testcase  test-cases/examples/chill/test_tile.script        test-cases/examples/chill/test_tile.c
-#chill-testcase  test-cases/examples/chill/tile_violation.script   test-cases/examples/chill/tile_violation.c
+#chill-testcase  test-cases/examples/chill/tile_violation.script   test-cases/examples/chill/tile_violation.c   --check-run-script --fail-run-script
 chill-testcase  test-cases/examples/chill/unroll.script           test-cases/examples/chill/unroll.c
-#chill-testcase  test-cases/examples/chill/unroll_violation.script test-cases/examples/chill/unroll_violation.c
+#chill-testcase  test-cases/examples/chill/unroll_violation.script test-cases/examples/chill/unroll_violation.c --check-run-script --fail-run-script
 

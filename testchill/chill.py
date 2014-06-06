@@ -67,7 +67,7 @@ class ChillConfig(object):
             yield ChillConfig(omega_dir, False, 'python', version)
             yield ChillConfig(omega_dir, True, 'lua', version)
             yield ChillConfig(omega_dir, True, 'python', version)
-        else:
+        elif version == 'release':
             yield ChillConfig(omega_dir, False, 'script', version)
             yield ChillConfig(omega_dir, True, 'lua', version)
 
