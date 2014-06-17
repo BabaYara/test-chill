@@ -5,6 +5,6 @@ To test a local working copy of chill (from the development branch):
 
 To test chill from the repository:
 ----------------------------------
-- Run `python -m testchill repo <svn-user-name>
+- Run `python -m testchill repo <svn-user-name>`
 
 
