@@ -119,5 +119,12 @@ def callonce(func):
     return wrapper
 
 def isdiff(strone, strtwo):
+    """
+    Returns a two element tuple. The first is True if the the two files are different, and the
+    next is a textual representation of the diff.
+    """
     diff = list(difflib.ndiff(strone.splitlines(), strtwo.splitlines()))
     return len(list(line for line in diff if line[0] in ['-','+'])) != 0, '\n'.join(diff)
+
+def filterext(ext_list, iterable):
+    return iter(s for s in iterable if s.split('.')[-1] in ext_list)

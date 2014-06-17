@@ -24,6 +24,13 @@ class TestMain(unittest.TestCase):
     def test_main_parse_chill_dev(self):
         tclist = main.args_to_tclist('-b {} chill-testcase path/to/somescript.script path/to/somesrc.c'.format(self.staging_dir_bin).split())
         tc = tclist[0]
+        
+        self.assertEqual(tc.config.chill_dir, None)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.build_cuda, False)
+        self.assertEqual(tc.config.version, 'dev')
+        self.assertEqual(tc.config.script_lang, 'script')
+        
         self.assertEqual(tc.name, 'chill:somescript.script')
         self.assertEqual(tc.wd, os.getcwd())
         self.assertEqual(tc.chill_bin, os.path.join(self.staging_dir_bin, 'chill'))
@@ -36,6 +43,13 @@ class TestMain(unittest.TestCase):
     def test_main_parse_chill_lua_dev(self):
         tclist = main.args_to_tclist('-b {} chill-testcase path/to/somescript.lua path/to/somesrc.c'.format(self.staging_dir_bin).split())
         tc = tclist[0]
+        
+        self.assertEqual(tc.config.chill_dir, None)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.build_cuda, False)
+        self.assertEqual(tc.config.version, 'dev')
+        self.assertEqual(tc.config.script_lang, 'lua')
+        
         self.assertEqual(tc.name, 'chill-lua:somescript.lua')
         self.assertEqual(tc.wd, os.getcwd())
         self.assertEqual(tc.chill_bin, os.path.join(self.staging_dir_bin, 'chill-lua'))
@@ -48,6 +62,13 @@ class TestMain(unittest.TestCase):
     def test_main_parse_chill_python_dev(self):
         tclist = main.args_to_tclist('-b {} chill-testcase path/to/somescript.py path/to/somesrc.c'.format(self.staging_dir_bin).split())
         tc = tclist[0]
+        
+        self.assertEqual(tc.config.chill_dir, None)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.build_cuda, False)
+        self.assertEqual(tc.config.version, 'dev')
+        self.assertEqual(tc.config.script_lang, 'python')
+        
         self.assertEqual(tc.name, 'chill-python:somescript.py')
         self.assertEqual(tc.wd, os.getcwd())
         self.assertEqual(tc.chill_bin, os.path.join(self.staging_dir_bin, 'chill-python'))
@@ -60,6 +81,13 @@ class TestMain(unittest.TestCase):
     def test_main_parse_cudachill_dev(self):
         tclist = main.args_to_tclist('-b {} chill-testcase -u path/to/somescript.lua path/to/somesrc.c'.format(self.staging_dir_bin).split())
         tc = tclist[0]
+        
+        self.assertEqual(tc.config.chill_dir, None)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.build_cuda, True)
+        self.assertEqual(tc.config.version, 'dev')
+        self.assertEqual(tc.config.script_lang, 'lua')
+        
         self.assertEqual(tc.name, 'cuda-chill:somescript.lua')
         self.assertEqual(tc.wd, os.getcwd())
         self.assertEqual(tc.chill_bin, os.path.join(self.staging_dir_bin, 'cuda-chill'))
@@ -67,11 +95,18 @@ class TestMain(unittest.TestCase):
         self.assertEqual(tc.chill_src, 'somesrc.c')
         self.assertEqual(tc.chill_script_path, os.path.join(os.getcwd(), 'path/to/somescript.lua'))
         self.assertEqual(tc.chill_src_path, os.path.join(os.getcwd(), 'path/to/somesrc.c'))
-        self.assertEqual(tc.chill_gensrc, 'somesrc.cu')
+        self.assertEqual(tc.chill_gensrc, 'rose_somesrc.cu')
     
     def test_main_parse_cudachill_python_dev(self):
         tclist = main.args_to_tclist('-b {} chill-testcase -u path/to/somescript.py path/to/somesrc.c'.format(self.staging_dir_bin).split())
         tc = tclist[0]
+        
+        self.assertEqual(tc.config.chill_dir, None)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.build_cuda, True)
+        self.assertEqual(tc.config.version, 'dev')
+        self.assertEqual(tc.config.script_lang, 'python')
+        
         self.assertEqual(tc.name, 'cuda-chill-python:somescript.py')
         self.assertEqual(tc.wd, os.getcwd())
         self.assertEqual(tc.chill_bin, os.path.join(self.staging_dir_bin, 'cuda-chill-python'))
@@ -79,7 +114,7 @@ class TestMain(unittest.TestCase):
         self.assertEqual(tc.chill_src, 'somesrc.c')
         self.assertEqual(tc.chill_script_path, os.path.join(os.getcwd(), 'path/to/somescript.py'))
         self.assertEqual(tc.chill_src_path, os.path.join(os.getcwd(), 'path/to/somesrc.c'))
-        self.assertEqual(tc.chill_gensrc, 'somesrc.cu')
+        self.assertEqual(tc.chill_gensrc, 'rose_somesrc.cu')
     
     def test_main_parse_chill_release(self):
         tclist = main.args_to_tclist('-b {} chill-testcase -v release path/to/somescript.script path/to/somesrc.c'.format(self.staging_dir_bin).split())
@@ -103,62 +138,62 @@ class TestMain(unittest.TestCase):
         self.assertEqual(tc.chill_src, 'somesrc.c')
         self.assertEqual(tc.chill_script_path, os.path.join(os.getcwd(), 'path/to/somescript.lua'))
         self.assertEqual(tc.chill_src_path, os.path.join(os.getcwd(), 'path/to/somesrc.c'))
-        self.assertEqual(tc.chill_gensrc, 'somesrc.cu')
+        self.assertEqual(tc.chill_gensrc, 'rose_somesrc.cu')
     
     def test_main_parse_chillbuild_dev(self):
         tclist = main.args_to_tclist('-b {} -C {} build-chill-testcase'.format(self.staging_dir_bin, self.chill_dev_src).split())
         tc = tclist[0]
         self.assertEqual(tc.name, 'chill')
-        self.assertEqual(tc.bin_dir, self.staging_dir_bin)
-        self.assertEqual(tc.chill_dir, self.chill_dev_src)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.chill_dir, self.chill_dev_src)
         self.assertEqual(tc.config.script_lang, 'script')
     
     def test_main_parse_chillbuild_lua_dev(self):
         tclist = main.args_to_tclist('-b {} -C {} build-chill-testcase -i lua'.format(self.staging_dir_bin, self.chill_dev_src).split())
         tc = tclist[0]
         self.assertEqual(tc.name, 'chill-lua')
-        self.assertEqual(tc.bin_dir, self.staging_dir_bin)
-        self.assertEqual(tc.chill_dir, self.chill_dev_src)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.chill_dir, self.chill_dev_src)
         self.assertEqual(tc.config.script_lang, 'lua')
     
     def test_main_parse_chillbuild_python_dev(self):
         tclist = main.args_to_tclist('-b {} -C {} build-chill-testcase -i python'.format(self.staging_dir_bin, self.chill_dev_src).split())
         tc = tclist[0]
         self.assertEqual(tc.name, 'chill-python')
-        self.assertEqual(tc.bin_dir, self.staging_dir_bin)
-        self.assertEqual(tc.chill_dir, self.chill_dev_src)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.chill_dir, self.chill_dev_src)
         self.assertEqual(tc.config.script_lang, 'python')
     
     def test_main_parse_chillbuild_cuda_dev(self):
         tclist = main.args_to_tclist('-b {} -C {} build-chill-testcase -u'.format(self.staging_dir_bin, self.chill_dev_src).split())
         tc = tclist[0]
         self.assertEqual(tc.name, 'cuda-chill')
-        self.assertEqual(tc.bin_dir, self.staging_dir_bin)
-        self.assertEqual(tc.chill_dir, self.chill_dev_src)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.chill_dir, self.chill_dev_src)
         self.assertEqual(tc.config.script_lang, 'lua')
     
     def test_main_parse_chillbuild_cuda_python_dev(self):
         tclist = main.args_to_tclist('-b {} -C {} build-chill-testcase -u -i python'.format(self.staging_dir_bin, self.chill_dev_src).split())
         tc = tclist[0]
         self.assertEqual(tc.name, 'cuda-chill-python')
-        self.assertEqual(tc.bin_dir, self.staging_dir_bin)
-        self.assertEqual(tc.chill_dir, self.chill_dev_src)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.chill_dir, self.chill_dev_src)
         self.assertEqual(tc.config.script_lang, 'python')
     
     def test_main_parse_chillbuild_release(self):
         tclist = main.args_to_tclist('-b {} -C {} build-chill-testcase -v release'.format(self.staging_dir_bin, self.chill_dev_src).split())
         tc = tclist[0]
         self.assertEqual(tc.name, 'chill-release')
-        self.assertEqual(tc.bin_dir, self.staging_dir_bin)
-        self.assertEqual(tc.chill_dir, self.chill_dev_src)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.chill_dir, self.chill_dev_src)
         self.assertEqual(tc.config.script_lang, 'script')
     
     def test_main_parse_chillbuild_cuda_release(self):
         tclist = main.args_to_tclist('-b {} -C {} build-chill-testcase -u -v release'.format(self.staging_dir_bin, self.chill_dev_src).split())
         tc = tclist[0]
         self.assertEqual(tc.name, 'cuda-chill-release')
-        self.assertEqual(tc.bin_dir, self.staging_dir_bin)
-        self.assertEqual(tc.chill_dir, self.chill_dev_src)
+        self.assertEqual(tc.config.bin_dir, self.staging_dir_bin)
+        self.assertEqual(tc.config.chill_dir, self.chill_dev_src)
         self.assertEqual(tc.config.script_lang, 'lua')
     
     def test_main_tctree(self):

@@ -24,6 +24,24 @@ def runchilltest(tclist):
         tc.tearDown()
 
 class TestChillTestCases(unittest.TestCase):
+    def config(self, **kwargs):
+        cargs = {
+                'omega_dir': self.omega_dev_dir,
+                'chill_dir': self.chill_dev_dir,
+                'bin_dir': self.bin_dir,
+                'build_cuda': False,
+                'script_lang': None,
+                'version': 'dev'
+            }
+        cargs.update(kwargs)
+        return testchill.chill.ChillConfig(**cargs)
+    
+    def config_rel(self, **kwargs):
+        kwargs['version'] = 'release'
+        kwargs['omega_dir'] = self.omega_rel_dir
+        kwargs['chill_dir'] = self.chill_rel_dir
+        return self.config(**kwargs)
+    
     def setUp(self):
         self.chill_dev_dir = os.getenv('CHILL_DEV_SRC')
         self.chill_rel_dir = os.getenv('CHILL_RELEASE_SRC')
@@ -36,7 +54,7 @@ class TestChillTestCases(unittest.TestCase):
         pass
     
     def test_chill_dev(self):
-        tc = testchill.chill.BuildChillTestCase(self.chill_dev_dir, self.omega_dev_dir, bin_dir=self.bin_dir)
+        tc = testchill.chill.BuildChillTestCase(self.config())
         self.assertEqual(tc.config.name(), 'chill')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-chill')
@@ -47,7 +65,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_chill_dev_lua(self):
-        tc = testchill.chill.BuildChillTestCase(self.chill_dev_dir, self.omega_dev_dir, bin_dir=self.bin_dir, script_lang='lua')
+        tc = testchill.chill.BuildChillTestCase(self.config(script_lang='lua'))
         self.assertEqual(tc.config.name(), 'chill-lua')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-chill')
@@ -59,7 +77,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_chill_dev_python(self):
-        tc = testchill.chill.BuildChillTestCase(self.chill_dev_dir, self.omega_dev_dir, bin_dir=self.bin_dir, script_lang='python')
+        tc = testchill.chill.BuildChillTestCase(self.config(script_lang='python'))
         self.assertEqual(tc.config.name(), 'chill-python')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-chill')
@@ -71,7 +89,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_cudachill_dev(self):
-        tc = testchill.chill.BuildChillTestCase(self.chill_dev_dir, self.omega_dev_dir, bin_dir=self.bin_dir, build_cuda=True)
+        tc = testchill.chill.BuildChillTestCase(self.config(build_cuda=True))
         self.assertEqual(tc.config.name(), 'cuda-chill')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-cuda-chill')
@@ -82,7 +100,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_cudachill_dev(self):
-        tc = testchill.chill.BuildChillTestCase(self.chill_dev_dir, self.omega_dev_dir, bin_dir=self.bin_dir, build_cuda=True, script_lang='python')
+        tc = testchill.chill.BuildChillTestCase(self.config(build_cuda=True, script_lang='python'))
         self.assertEqual(tc.config.name(), 'cuda-chill-python')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-cuda-chill')
@@ -93,7 +111,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
 
     def test_chill_release(self):
-        tc = testchill.chill.BuildChillTestCase(self.chill_rel_dir, self.omega_rel_dir, bin_dir=self.bin_dir, version='release')
+        tc = testchill.chill.BuildChillTestCase(self.config_rel())
         self.assertEqual(tc.config.name(), 'chill-release')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_rel_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend')
@@ -104,7 +122,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_cudachill_release(self):
-        tc = testchill.chill.BuildChillTestCase(self.chill_rel_dir, self.omega_rel_dir, build_cuda=True, version='release')
+        tc = testchill.chill.BuildChillTestCase(self.config_rel(build_cuda=True))
         self.assertEqual(tc.config.name(), 'cuda-chill-release')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_rel_dir)
         self.assertEqual(tc.config.env()['CUDACHILL'], 'true')
@@ -116,12 +134,26 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_run_chill(self):
-        tc = testchill.chill.RunChillTestCase(self.bin_dir, 'test-cases/chill/test_scale.script', 'test-cases/chill/mm.c', wd=self.wd)
+        tc = testchill.chill.RunChillTestCase(self.config(), 'test-cases/chill/test_scale.script', 'test-cases/chill/mm.c', wd=self.wd)
         self.assertEqual(tc.chill_src, 'mm.c')
         self.assertEqual(tc.chill_script, 'test_scale.script')
         self.assertEqual(tc.chill_src_path, os.path.join(os.getcwd(), 'test-cases/chill/mm.c'))
         self.assertEqual(tc.chill_script_path, os.path.join(os.getcwd(), 'test-cases/chill/test_scale.script'))
         self.assertEqual(tc.chill_gensrc, 'rose_mm.c')
         self.assertEqual(tc.name, 'chill:test_scale.script')
-        runchilltest([tc])
+        if _runbuild:
+            runchilltest([tc])
+    
+    def test_chill_coverage(self):
+        tc = testchill.chill.BuildChillTestCase(self.config(), options={'coverage':True})
+        self.assertEqual(tc.config.name(), 'chill')
+        self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
+        self.assertEqual(tc.config.make_depend_target(), 'depend-chill')
+        self.assertEqual(tc.config.make_target(), 'chill')
+        self.assertEqual(tc.name, 'chill')
+        self.assertTrue(tc.options['coverage'])
+        logging.info('Building ' + tc.name)
+        if _runbuild:
+            runtest([tc])
+            self.assertTrue(os.path.exists(os.path.join(self.chill_dev_dir, 'ir_rose.gcno')))
 

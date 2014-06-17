@@ -8,6 +8,7 @@ import sys
 import textwrap
 
 from . import chill
+from . import gcov
 from . import omega
 from . import test
 from . import util
@@ -24,6 +25,8 @@ def make_local(argsns, arg_parser):
     argsns.wd = os.path.join(os.getcwd(), '.staging/wd')
     argsns.bin_dir = os.path.join(os.getcwd(), '.staging/bin')
     argsns.chill_tc_dir = os.path.join(os.getcwd(), 'test-cases') # formally from the commandline
+    argsns.chill_dir = os.path.abspath(argsns.chill_dir)
+    argsns.omega_dir = os.path.abspath(argsns.omega_dir)
     
     util.mkdir_p(argsns.wd)
     util.mkdir_p(argsns.bin_dir)
@@ -31,8 +34,8 @@ def make_local(argsns, arg_parser):
     util.shell('cp', [os.path.join(argsns.chill_dir, 'examples/cuda-chill/cudaize.py'), argsns.wd])
     
     chill_version = argsns.chill_version
-    for config in chill.ChillConfig.configs_by_version(argsns.omega_dir, chill_version):
-        build_testcase = config.make_build_testcase(argsns.chill_dir, argsns.bin_dir)
+    for config in chill.ChillConfig.configs(argsns.omega_dir, argsns.chill_dir, argsns.bin_dir, version=chill_version):
+        build_testcase = chill.BuildChillTestCase(config, coverage_set=argsns.coverage_set)
         yield build_testcase
         batch_file = os.path.join(argsns.chill_tc_dir, config.name() + '.tclist')
         for tc in make_batch_testcaselist(argsns, arg_parser, batch_file):
@@ -72,11 +75,14 @@ def make_repo(argsns, arg_parser):
         new_args.chill_dir = os.path.join(new_args.repo_dir, chill_repo_name)
         util.shell('svn', ['export', '--force', omega_repo, new_args.omega_dir])
         util.shell('svn', ['export', '--force', chill_repo, new_args.chill_dir])
+        util.shell('cp', [os.path.join(new_args.chill_dir, 'examples/cuda-chill/cudaize.lua'), new_args.wd])
+        if version == 'dev':
+            util.shell('cp', [os.path.join(new_args.chill_dir, 'examples/cuda-chill/cudaize.py'), new_args.wd])
         # do omega: (just build it for now)
         yield omega.BuildOmegaTestCase(new_args.omega_dir ,version)
         # do chill
-        for config in chill.ChillConfig.configs_by_version(new_args.omega_dir, version):
-            yield config.make_build_testcase(new_args.chill_dir, new_args.bin_dir)
+        for config in chill.ChillConfig.configs(new_args.omega_dir, new_args.chill_dir, new_args.bin_dir, version=version):
+            yield chill.BuildChillTestCase(config, coverage_set=argsns.coverage_set)
             batch_file = os.path.join(argsns.chill_tc_dir, config.name() + '.tclist')
             if os.path.exists(batch_file):
                 for tc in make_batch_testcaselist(new_args, arg_parser, batch_file):
@@ -90,16 +96,10 @@ def make_runchill_testcase(argsns):
     assert (argsns.chill_dir != None) or (argsns.bin_dir != None)
     
     ### Required parameters ###
-    chill_dir = argsns.chill_dir
-    bin_dir = argsns.bin_dir
-    build_cuda = argsns.build_cuda
-    chill_version = argsns.chill_version
-    script_lang = argsns.chill_script_lang
-    wd = argsns.wd
-    chill_script = argsns.chill_script
-    chill_src = argsns.chill_src
-    
-    chill_bin_dir = bin_dir if bin_dir != None else chill_dir
+    wd = os.path.abspath(argsns.wd)
+    chill_script = os.path.abspath(argsns.chill_script)
+    chill_src = os.path.abspath(argsns.chill_src)
+    coverage_set = argsns.coverage_set
     
     ### Options to pass to the chill test case ###
     options = dict()
@@ -107,8 +107,17 @@ def make_runchill_testcase(argsns):
     options['run-script'] = argsns.chill_test_run_script
     options['compile-gensrc'] = argsns.chill_test_compile_gensrc
     options['check-run-script-stdout'] = argsns.chill_test_check_run_script
+    options['coverage'] = argsns.chill_test_coverage
     
-    return chill.RunChillTestCase(chill_bin_dir, chill_script, chill_src, build_cuda=build_cuda, chill_version=chill_version, script_lang=script_lang, wd=wd, options=options)
+    config = chill.ChillConfig(
+        omega_dir = os.path.abspath(argsns.omega_dir) if argsns.omega_dir != None else None,
+        chill_dir = os.path.abspath(argsns.chill_dir) if argsns.chill_dir != None else None,
+        bin_dir = os.path.abspath(argsns.bin_dir) if argsns.bin_dir != None else None,
+        build_cuda = argsns.build_cuda,
+        script_lang = argsns.chill_script_lang,
+        version = argsns.chill_version)
+    
+    return chill.RunChillTestCase(config, chill_script, chill_src, wd=wd, options=options, coverage_set=coverage_set)
 
 def make_buildchill_testcase(argsns):
     """
@@ -118,20 +127,27 @@ def make_buildchill_testcase(argsns):
     assert argsns.chill_dir != None
     assert argsns.omega_dir != None
     
-    chill_dir = argsns.chill_dir
-    bin_dir = argsns.bin_dir
-    build_cuda = argsns.build_cuda
-    chill_version = argsns.chill_version
-    chill_script_lang = argsns.chill_script_lang
-    omega_dir = os.path.abspath(argsns.omega_dir)
+    coverage_set = argsns.coverage_set
     
-    return chill.BuildChillTestCase(chill_dir, omega_dir, build_cuda, chill_script_lang, chill_version, bin_dir)
+    options = dict()
+    options['coverage'] = argsns.chill_build_coverage
+    
+    config = chill.ChillConfig(
+        omega_dir = os.path.abspath(argsns.omega_dir) if argsns.omega_dir != None else None,
+        chill_dir = os.path.abspath(argsns.chill_dir) if argsns.chill_dir != None else None,
+        bin_dir = os.path.abspath(argsns.bin_dir) if argsns.bin_dir != None else None,
+        build_cuda = argsns.build_cuda,
+        script_lang = argsns.chill_script_lang,
+        version = argsns.chill_version)
+    
+    return chill.BuildChillTestCase(config, options=options, coverage_set=coverage_set)
 
 def make_batch_testcaselist(argsns, arg_parser, batch_file=None):
     """
     Make a list of test cases from a file.
-    @param batch_file The batch file name
+    @param argsns The parent argument namespace
     @param arg_parser The argument parser. Used to parse lines from the batch file.
+    @param batch_file The batch file name
     """
     if batch_file is None:
         batch_file = argsns.batch_file
@@ -166,17 +182,6 @@ def add_repo_args(arg_parser):
     """
     arg_parser.add_argument('svnuser', metavar='svn-user-name')
 
-def add_chill_common_args(arg_parser):
-    """
-    Common chill command line arguments.
-    @param arg_parser The ArgumentParser object
-    """
-    arg_parser.add_argument('-v', '--chill-branch', dest='chill_version', default='dev', choices=['release','dev'])
-    cuda_group = arg_parser.add_mutually_exclusive_group()
-    cuda_group.add_argument('-u', '--target-cuda', action='store_const', const=True, dest='build_cuda', default=False, help='Test cuda-chill. (Default is chill)')
-    cuda_group.add_argument('-c', '--target-c', action='store_const', const=False, dest='build_cuda', default=False, help='Test chill. (Default is chill)')
-    arg_parser.add_argument('-i', '--interface-lang', dest='chill_script_lang', choices=['script','lua','python'], default=None, help='Chill interface language. If an interface language is not specified, it will be determined by the script file name.')
-
 def add_boolean_option(arg_parser, name, dest, default=True, help_on=None, help_off=None):
     """
     Add a boolean option.
@@ -191,6 +196,17 @@ def add_boolean_option(arg_parser, name, dest, default=True, help_on=None, help_
     group.add_argument('--' + name, action='store_true', dest=dest, default=default, help=help_on)
     group.add_argument('--no-' + name, action='store_false', dest=dest, default=default, help=help_off)
 
+def add_chill_common_args(arg_parser):
+    """
+    Common chill command line arguments.
+    @param arg_parser The ArgumentParser object
+    """
+    arg_parser.add_argument('-v', '--chill-branch', dest='chill_version', default='dev', choices=['release','dev'])
+    cuda_group = arg_parser.add_mutually_exclusive_group()
+    cuda_group.add_argument('-u', '--target-cuda', action='store_const', const=True, dest='build_cuda', default=False, help='Test cuda-chill. (Default is chill)')
+    cuda_group.add_argument('-c', '--target-c', action='store_const', const=False, dest='build_cuda', default=False, help='Test chill. (Default is chill)')
+    arg_parser.add_argument('-i', '--interface-lang', dest='chill_script_lang', choices=['script','lua','python'], default=None, help='Chill interface language. If an interface language is not specified, it will be determined by the script file name.')
+
 @util.callonce
 def add_chill_run_args(arg_parser):
     """
@@ -203,6 +219,15 @@ def add_chill_run_args(arg_parser):
     add_boolean_option(arg_parser, 'run-script', dest='chill_test_run_script', default=True, help_on='Run chill script.', help_off='Do not run chill script.')
     add_boolean_option(arg_parser, 'compile-gensrc', dest='chill_test_compile_gensrc', default=True, help_on='Compile generated source file', help_off='Do not compile generated source file.')
     add_boolean_option(arg_parser, 'check-run-script', dest='chill_test_check_run_script', default=False, help_on='Diff stdout from chill script against a benchmark.')
+    add_boolean_option(arg_parser, 'test-coverage', 'chill_test_coverage', default=True, help_on='Run chill and record code coverage (default).', help_off='Run chill normally without recording code coverage.')
+
+@util.callonce
+def add_chill_build_args(arg_parser):
+    """
+    Command line arguments specific to building chill and testing the build process
+    @params arg_parser The ArgumentParser object
+    """
+    add_boolean_option(arg_parser, 'build-coverage', 'chill_build_coverage', default=True, help_on='Build chill for code coverage flags (default).', help_off='Build chill normally without code coverage flags.')
 
 @util.callonce
 def add_local_command(command_group):
@@ -243,6 +268,7 @@ def add_buildchill_command(command_group):
     """
     buildchill_arg_parser = command_group.add_parser('build-chill-testcase')
     add_chill_common_args(buildchill_arg_parser)
+    add_chill_build_args(buildchill_arg_parser)
     buildchill_arg_parser.set_defaults(func=lambda a, ap: [make_buildchill_testcase(a)])
 
 @util.callonce
@@ -295,7 +321,7 @@ def make_argparser():
     """
     arg_parser = argparse.ArgumentParser(
         prog='python -m testchill',
-        epilog=textwrap.dedent('''\
+        description=textwrap.dedent('''\
             
             To test a local working copy of chill (from the development branch):
             --------------------------------------------------------------------  
@@ -303,7 +329,7 @@ def make_argparser():
             - Run `python -m testchill local <path-to-chill>`
             
         '''),
-        description='DESCRIPTION',
+        epilog='EPILOG',
         formatter_class=argparse.RawDescriptionHelpFormatter)
     
     add_global_args(arg_parser)
@@ -313,7 +339,7 @@ def make_argparser():
     
     return arg_parser
 
-def args_to_tclist(args=sys.argv[1:], arg_parser=make_argparser(), argsns=None):
+def args_to_tclist(args=sys.argv[1:], arg_parser=make_argparser(), argsns=None, **kwargs):
     """
     Parse one line and return a list of test cases.
     @params args Raw arguments to be passed to the ArgumentParser object (defaults to sys.args[1:])
@@ -323,13 +349,17 @@ def args_to_tclist(args=sys.argv[1:], arg_parser=make_argparser(), argsns=None):
     if not argsns is None:                           # if an argsns is given,
         argsns = util.copy(argsns, exclude=['func']) # make a shallow copy, (excluding func)
     argsns = arg_parser.parse_args(args, namespace=argsns)
+    for k,v in kwargs.items():
+        setattr(argsns, k, v)
     return list(argsns.func(argsns, arg_parser))
 
 @util.callonce
 def main():
-    results = list(test.run(args_to_tclist()))
+    coverage = gcov.GcovSet()
+    results = list(test.run(args_to_tclist(coverage_set=coverage)))
     test.pretty_print_results(results)
     util.rmtemp()
+    coverage.pretty_print()
     if any(s.failed() or s.errored() for s in results):
         sys.exit(1)
 

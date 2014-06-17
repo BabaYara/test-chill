@@ -30,6 +30,7 @@ class TestResult(object):
     def __init__(self, testcase, status):
         self.testcase_name = testcase.name
         self.status = status
+        testcase.setresult(self)
     
     @staticmethod
     def make_pass(result_type, testcase, *args, **kwargs):
@@ -244,6 +245,12 @@ class TestCase(object):
         Otherwise, return the original exception.
         """
         return exc
+    
+    def setresult(self, test_result):
+        """
+        Called after a test issues a result and before tearDown is called.
+        """
+        self.test_result = test_result
 
 
 class SequencialTestCase(TestCase):

@@ -138,12 +138,16 @@ test-omega: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC)
 	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_omega.py
 
 .PHONY: test-core
-test-core:
-	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_util.py unit-tests/test_test.py unit-tests/test___main__.py
+test-core: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
+	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_util.py unit-test/test_gcov.py unit-tests/test_test.py unit-tests/test___main__.py
 
 .PHONY: test-core-test
 test-core-test:
 	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_test.py
+
+.PHONY:
+test-core-gcov:
+	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_gcov.py
 
 .PHONY: test-debug
 debug:
