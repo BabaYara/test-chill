@@ -1,3 +1,4 @@
+from __future__ import print_function
 import functools
 import itertools
 import os
@@ -42,10 +43,26 @@ class GcovFile(object):
                 lines.append(GcovLine(int(pline[1]), {process : int(pline[0])}, ':'.join(pline[2:])))
         return lines, properties
     
+    @staticmethod
+    def union(left, right):
+        return left | right
+    
+    def __or__(self, right):
+        new_file = self.clone()
+        new_file.merge(right)
+        return new_file
+    
+    def __ior__(self, right):
+        self.merge(right)
+        return self
+    
     def merge(self, other):
         assert self.src_file_name == other.src_file_name
         GcovLine.merge_lines(self.lines, other.lines)
         self.properties.update(other.properties)
+    
+    def clone(self):
+        return GcovFile(self.src_file_name, self.cov_file_path, list(self.lines), dict(self.properties))
 
 
 class GcovLine(object):
@@ -91,8 +108,26 @@ class Gcov(object):
             else:
                 self.files[f.src_file_name] = f
     
+    def __or__(self, right):
+        new_cov = self.clone()
+        new_cov.merge(right)
+        return new_cov
+    
+    def __ior__(self, right):
+        self.merge(right)
+        return self
+    
+    @staticmethod
+    def union(left, right):
+        return left | right
+    
     def merge(self, other):
         self._append(other.files.values())
+    
+    def clone(self):
+        new_cov = Gcov(self.srcdir)
+        new_cov._append(iter(f.clone() for f in self.files.values()))
+        return new_cov
 
 
 class GcovSet(object):
@@ -106,6 +141,30 @@ class GcovSet(object):
         cov = self.coverage_by_program[prog_name]
         cov.merge(Gcov.parse(cov.srcdir, process_name))
     
-    def pretty_print(self, outfile=sys.stdout):
-        pass
+    def unexecuted_lines(self):
+        covlist = sorted(self.coverage_by_program.values(), key=lambda c: c.srcdir)
+        for src, grp in itertools.groupby(covlist, lambda c: c.srcdir):
+            files = functools.reduce(lambda a, c: a | c, grp).files.values()
+            file_lines = iter((f.src_file_name, iter(l for l in f.lines if l.count() == 0)) for f in files)
+            yield src, file_lines        
+    
+    def pretty_print(self, outfile=sys.stdout, width=60, stats=['unexecuted', 'unexecuted.bysrc']):
+        print('='*width, file=outfile)
+        print('  CODE COVERAGE', file=outfile)
+        
+        if 'unexecuted' in stats:
+            print('='*width, file=outfile)
+            print('    unexecuted lines', file=outfile)
+            if 'unexecuted.bysrc' in stats:
+                for src, file_lines in self.unexecuted_lines():
+                    print((src + ':'), file=outfile)
+                    print('-'*width, file=outfile)
+                    for src_file_name, lines in file_lines:
+                        print('  ' + src_file_name + ':', file=outfile)
+                        for line in lines:
+                            print("{}:{}".format(str(line.lineno).rjust(5), line.code), file=outfile)
+        #print('='*width, file=outfile)
+        #print(prog, file=outfile)
+        #print('-'*width, file=outfile)
+            
         
