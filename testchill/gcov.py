@@ -31,6 +31,8 @@ class GcovFile(object):
         properties = dict()
         lines = []
         for line in str_lines:
+            if line[-1] == '\n':
+                line = line[0:-1]
             pline = line.split(':')
             pline = list(map(str.strip, pline[0:2])) + pline[2:]
             if pline[1] == '0':
