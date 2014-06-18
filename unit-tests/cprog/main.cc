@@ -6,7 +6,7 @@
 
 #include "Sorter.h"
 #include "QuickSorter.h"
-//#include "MergeSorter.h"
+#include "MergeSorter.h"
 //#include "InsertionSorter.h"
 //#include "ShellSorter.h"
 
@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
     print_vector(vec);
     
     addsorter(sorter_map, new QuickSorter());
-    //addsorter(sorter_map, new MergekSorter());
+    addsorter(sorter_map, new MergeSorter());
     //addsorter(sorter_map, new InsertionSorter());
     //addsorter(sorter_map, new ShellSorter());
     sorter_map[std::string(argv[1])]->sort(vec);
