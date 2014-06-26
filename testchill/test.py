@@ -35,64 +35,72 @@ class TestResult(object):
     @staticmethod
     def make_pass(result_type, testcase, *args, **kwargs):
         """
-        Create a pass result.
+        Create and return a passing test result of type result_type.
         @param result_type A class that extends TestResult
         @param testcase The test case that generated the result
+        @param *args Additional positional arguments to be passed to result_type.__init__
+        @param *kwargs Keyword arguments to be passed to result_type.__init__
         """
         return result_type(testcase, TestResult._pass, *args, **kwargs)
     
     @staticmethod
     def make_error(result_type, testcase, *args, **kwargs):
         """
-        Create an error result.
+        Create and return a errored test result of type result_type.
         @param result_type A class that extends TestResult
         @param testcase The test case that generated the result
+        @param *args Additional positional arguments to be passed to result_type.__init__
+        @param *kwargs Keyword arguments to be passed to result_type.__init__
         """
         return result_type(testcase, TestResult._error, *args, **kwargs)
     
     @staticmethod
     def make_fail(result_type, testcase, *args, **kwargs):
         """
-        Create a fail result.
+        Create and return a failed test result of type result_type.
         @param result_type A class that extends TestResult
         @param testcase The test case that generated the result
+        @param *args Additional positional arguments to be passed to result_type.__init__
+        @param *kwargs Keyword arguments to be passed to result_type.__init__
         """
         return result_type(testcase, TestResult._fail, *args, **kwargs)
     
     @staticmethod
     def make_skipped(result_type, testcase, *args, **kwargs):
         """
-        Create a skipped result.
+        Create and return a skipped test result of type result_type.
         @param result_type A class that extends TestResult
         @param testcase The test case that generated the result
+        @param *args Additional positional arguments to be passed to result_type.__init__
+        @param *kwargs Keyword arguments to be passed to result_type.__init__
         """
         return result_type(testcase, TestResult._skipped, *args, **kwargs)
     
     def passed(self):
-        """ Returns true iff the testcase passed. """
+        """ Return true iff the testcase passed. """
         return self.status == TestResult._pass
     
     def errored(self):
-        """ Returns true iff the testcase passed. """
+        """ Return true iff the testcase passed. """
         return self.status == TestResult._error
 
     def failed(self):
-        """ Returns true iff the testcase passed. """
+        """ Return true iff the testcase passed. """
         return self.status == TestResult._fail
     
     def skipped(self):
-        """ Returns true iff the testcase was skipped """
+        """ Return true iff the testcase was skipped """
         return self.status == TestResult._skipped
         
     def pprint_dict(self):
         """
-        Returns a dict that is ideal for passing to pprint.
+        Return a dict that is ideal for passing to pprint.
         """
         return {'testcase_name': self.testcase_name, 'status':self.status}
     
     def pretty_print(self, width=60, outfile=sys.stdout):
         """
-        Prints result to a file in a human readable way.
+        Print result to a file in a human readable way.
         """
         print('='*width, end='\n', file=outfile)
         print("{}: {}".format(self.status, self.testcase_name), end='\n', file=outfile)
@@ -101,7 +109,7 @@ class TestResult(object):
         print('-'*width, end='\n', file=outfile)
     
     def pretty_message(self):
-        """ Returns a message to be printed by pretty_print. Returns an empyt string by default. """
+        """ Return a message to be printed by pretty_print. Returns an empyt string if not overriden. """
         return ''
         
 
@@ -116,7 +124,7 @@ class FailedTestResult(TestResult):
     
     def pprint_dict(self):
         """
-        Returns a dict that is ideal for passing to pprint.
+        Return a dict that is ideal for passing to pprint.
         """
         ppdict = super(FailedTestResult, self).pprint_dict()
         ppdict['reason'] = self.reason
@@ -166,15 +174,15 @@ class SubTestResult(TestResult):
     """
     def __init__(self, subtest_name, inner_result):
         """
-        @param subtest_name the name of the subtest
-        @param inner_result the result returned from running the subtest
+        @param subtest_name The name of the subtest.
+        @param inner_result The result returned from running the subtest.
         """
         super(SubTestResult, self).__init__(inner_result.testcase, inner_result.status)
         self.inner_result = inner_result
     
     def pprint_dict(self):
         """
-        Returns a dict that is ideal for passing to pprint.
+        Return a dict that is ideal for passing to pprint.
         """
         ppdict = super(CompoundTestResult, self).pprint_dict()
         ppdict['inner_result'] = self.inner_result.pprint_dict()
@@ -198,7 +206,7 @@ class UnhandledExceptionTestResult(TestResult):
     
     def pprint_dict(self):
         """
-        Returns a dict that is ideal for passing to pprint.
+        Return a dict that is ideal for passing to pprint.
         """
         ppdict = super(UnhandledExceptionTestResult, self).pprint_dict()
         ppdict['exception_type'] = self.exception_type
@@ -264,7 +272,7 @@ class SequencialTestCase(TestCase):
     
     def add_subtest(self, subtest_name, subtest_func):
         """
-        Adds a subtest.
+        Add a subtest.
         """
         self.tests.append((subtest_name, subtest_func))
     
@@ -286,13 +294,13 @@ class SubTestCase(TestCase):
 
 def run(tclist, failfast=False):
     """
-    Run all test cases in tclist.
+    Run all test cases in tclist and return a list of thier results.
     """
     return list(_rungen(tclist, failfast))
 
 def _rungen(tclist, failfast=False):
     """
-    Generator for running tests internally.
+    A generator for running tests internally.
     """
     for tc in tclist:
         result = None
@@ -308,7 +316,10 @@ def _rungen(tclist, failfast=False):
 
 def _result(res, tc):
     """
-    Convert object to a TestResult
+    Convert res to a TestResult object.
+    If res is a TestResult object, give it back.
+    If res is an Exception, return an UnandledExceptionTestResult.
+    If res is something else, discard it and return a passed TestResult.
     """
     if isinstance(res, TestResult):
         return res
@@ -320,18 +331,30 @@ def _result(res, tc):
 
 def pprint_results(result_iter, outfile=sys.stdout):
     """
-    Calls pprint.pprint.
+    Print pprint version of test results to a file-like object.
+    @param result_iter An iterator of results to print.
+    @param outfile An opened file-like object to print to (defaults to stdout).
     """
     status_func = lambda r: r.status
     result_iter = sorted(result_iter, key=status_func)
     status_dict = dict(iter((k, list(map(lambda tc: tc.pprint_dict(), g))) for k, g in itertools.groupby(result_iter, status_func)))
     pprint.pprint(status_dict, stream=outfile)
 
-def pretty_print_results(result_iter,
+def pretty_print_results(
+        result_iter,
         count_by_status=True, exclude_passed=True, exclude_skipped=True, exclude_failed=False,
         exclude_errored=False, sort_by_status=True, width=60, outfile=sys.stdout):
     """
-    Prints human readable output to a file-like object.
+    Print iterator of TestResults in a human readable format to a file-like object.
+    @param result_iter An iterator of TestResult objects to print.
+    @param count_by_status Print the number of tests for each status (defaults to True).
+    @param exclude_passed Exclude passed test results from printing (defaults to True).
+    @param exclude_skipped Exclude skipped test results from printing (defaults to True).
+    @param exclude_failed Exclude failed test results from printing (defaults to False).
+    @param exclude_errored Exclude errored test results from printing (defaults to False).
+    @param sort_by_status Print test results in order of status: passed, errored, failed, then skipped (defaults to True).
+    @param width Printing width (defaults to 60).
+    @param outfile A file-like object to print to (defaults to stdout).
     """
     result_list = list(result_iter)
     status_func = lambda r: r.status
