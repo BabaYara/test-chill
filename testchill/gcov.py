@@ -9,6 +9,12 @@ from . import util
 
 class GcovFile(object):
     def __init__(self, src_file_name, cov_file_path, lines, properties):
+        """
+        @param src_file_name Name of the source file.
+        @param cov_file_path Full path to the coverage file.
+        @param lines List of GcovLine objects.
+        @param properties Properties from the coverage file.
+        """
         self.src_file_name = src_file_name
         self.cov_file_path = cov_file_path
         self.lines = lines
@@ -16,6 +22,12 @@ class GcovFile(object):
     
     @staticmethod
     def parse_file(gcov, fname, process=None):
+        """
+        Parse a file into a GcovFile object.
+        @param gcov Gcov object that tis file is a part of.
+        @param gname File name.
+        @param process Process name
+        """
         util.shell('gcov', [fname], wd=gcov.srcdir)
         cov_file_path = os.path.join(gcov.srcdir, fname + '.gcov')
         src_file_name = fname
@@ -28,6 +40,11 @@ class GcovFile(object):
     
     @staticmethod
     def parse_lines(str_lines, process):
+        """
+        Parse a string from a coverage file into a list of GcovLine objects.
+        @param str_lines Full text of a coverage file.
+        @param process Name of the process that executed the code.
+        """
         properties = dict()
         lines = []
         for line in str_lines:
@@ -47,40 +64,66 @@ class GcovFile(object):
     
     @staticmethod
     def union(left, right):
+        """
+        Merge two different coverages of the same file into a single coverage object.
+        """
         return left | right
     
     def __or__(self, right):
+        """
+        Merge two different coverages of the same file into a single coverage object.
+        """
         new_file = self.clone()
         new_file.merge(right)
         return new_file
     
     def __ior__(self, right):
+        """
+        Merge two different coverages of the same file into a single coverage object.
+        """
         self.merge(right)
         return self
     
     def merge(self, other):
+        """
+        Merge another coeverage into self.
+        """
         assert self.src_file_name == other.src_file_name
         GcovLine.merge_lines(self.lines, other.lines)
         self.properties.update(other.properties)
     
     def clone(self):
+        """
+        Create a shallow clone.
+        """
         return GcovFile(self.src_file_name, self.cov_file_path, list(self.lines), dict(self.properties))
 
 
 class GcovLine(object):
     def __init__(self, lineno, count_by_process, code):
+        """
+        @param lineno Line number.
+        @param count_by_prcess A dictionary of execution counts by name of the process that executed them.
+        @param code Source code from this line.
+        """
         self.lineno = lineno
         self.count_by_process = count_by_process
         self.code = code
     
     @staticmethod
     def merge_lines(lines, other_lines):
+        """
+        Merge lines from other_line into lines.
+        """
         for line, other_line in zip(lines, other_lines):
             assert line.lineno == other_line.lineno
             assert line.code == other_line.code
             line.count_by_process.update(other_line.count_by_process)
     
     def count(self):
+        """
+        The total number of times this line was executed.
+        """
         runable_list = [l for l in self.count_by_process.values() if l is not None]
         if len(runable_list) == 0:
             return None

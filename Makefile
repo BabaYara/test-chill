@@ -149,6 +149,10 @@ test-core-test:
 test-core-gcov:
 	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_gcov.py
 
+.PHONY:
+test-core-codegen:
+	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_codegen.py
+
 .PHONY: test-debug
 debug:
 	@### NOTHING ###

@@ -317,7 +317,7 @@ def add_global_args(arg_parser):
 @util.callonce
 def make_argparser():
     """
-    Create the argument parser
+    Create the argument parser.
     """
     arg_parser = argparse.ArgumentParser(
         prog='python -m testchill',
