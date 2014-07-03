@@ -83,31 +83,27 @@ endif
 
 DIRTY_EXTS=pyc o log
 DIRTY_FILES=$(foreach de,$(DIRTY_EXTS),$(shell find . -name "*.$(de)"))
-DIRTY_DIRS=$(shell find . -name '__pycache__' -and -type d) $(STAGING_DIR)
+DIRTY_DIRS=$(shell find . -name '__pycache__' -and -type d) $(STAGING_DIR) pylang
 
 
 
 ### The all target ###
 .PHONY: all
-all: run-all
-
-
-
-### test all testcases from repo without notification ###
-.PHONY: run-all
-run-all:
-
+all:
+	# do nothing
 
 
 ### This will install the chill_test module ###
 .PHONY: install
-install:
+install: pylang
+	#TODO: maybe run a setup or something
 
 
 
 ### This will uninstall teh chill_test module ###
 .PHONY: uninstall
 uninstall:
+	#TODO: can python modules be uninstalled?
 
 
 
@@ -118,13 +114,17 @@ clean:
 	rm -rf $(DIRTY_DIRS)
 
 
+pylang:
+	git clone https://github.com/dhuth/pylang.git pylang-tmp
+	cp -r pylang-tmp/pylang pylang
+	rm -rf pylang-tmp
 
 ### Test the test harness ###
 .PHONY: test
 test: $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
 	@echo "-----------------------------------------------------------"
 	@echo "Note: This target tests the test suite it's self, not chill"
-	@echo "To test chill, do 'make run-all' or just 'make'"
+	@echo "To test chill, run python -m testchill ..."
 	@echo "-----------------------------------------------------------"
 	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_util.py unit-tests/test_test.py unit-tests/test_omega.py unit-tests/test_chill.py unit-tests/test___main__.py
 
