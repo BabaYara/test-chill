@@ -23,12 +23,8 @@ class TestExtraction(unittest.TestCase):
             return list(testchill._extract._TagExtractor._commented(txt, ext))
         for args, res in self.test__commented_data:
             self.assertEqual(run(*args), res)
-        print(__file__)
     
     def test_extract(self):
-        #def run(txt, filename, ext):
-        #    return _TagExtractor.extract_tag(txt, filename, ext)
         for args, res in self.test_extract_data:
-            self.assertEqual(run(*args), res)
-    
+            self.assertEqual(_TagExtractor.extract_tag(*args), res)
         

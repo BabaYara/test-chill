@@ -136,3 +136,16 @@ def filterext(ext_list, filenames):
     @param filenames An iterable object of file names.
     """
     return iter(s for s in iterable if any(s.strip().endwith(e) for e in ext_list))
+
+def extract_tag(tagname, filename, wd=os.getcwd()):
+    """
+    Extract commented out text in each html tag '<tagname>'. Returns a list of tuples for each tag.
+    Each tuple has two elements, the first is the text found in the tag, the second contains a dict
+    of attributes given in the tag.
+    @param tagname The name of the tag to search for.
+    @param filename A filename to search for comments in.
+    @param wd The working directory.
+    """
+    from . import _extract
+    return _extract.extract_tag(tagname, filename, wd)
+    
