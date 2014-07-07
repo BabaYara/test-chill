@@ -90,7 +90,8 @@ DIRTY_DIRS=$(shell find . -name '__pycache__' -and -type d) $(STAGING_DIR) pylan
 ### The all target ###
 .PHONY: all
 all:
-	# do nothing
+	$(MAKE) clean quiet=1
+	$(MAKE) install quiet=1
 
 
 ### This will install the chill_test module ###

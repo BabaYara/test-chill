@@ -99,15 +99,16 @@ def copy(obj, exclude=[]):
 def applyenv(line):
     """
     Apply bash style environment variables to a string
-    @line The input string
+    @param line The input string
     """
     return re.sub(r'\$([a-zA-Z_][a-zA-Z_0-9]*)\b',lambda m: str(os.getenv(m.group(1), '')), line)
 
 def callonce(func):
     """
-    Asserts that a function is only ever called once.
+    Assert that a function is only ever called once.
+    @param func Function to only be run once.
     """
-    pred_name = '__' + func.__name__ + '_called'
+    pred_name = '__' + func.__module__.replace('.','__') + '_' + func.__name__ + '_called'
     globals()[pred_name] = False
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
@@ -120,11 +121,18 @@ def callonce(func):
 
 def isdiff(strone, strtwo):
     """
-    Returns a two element tuple. The first is True if the the two files are different, and the
+    Diff two strings. Returns a two element tuple. The first is True if the the two files are different, and the
     next is a textual representation of the diff.
+    @param strone First string.
+    @param strtwo Second string.
     """
     diff = list(difflib.ndiff(strone.splitlines(), strtwo.splitlines()))
     return len(list(line for line in diff if line[0] in ['-','+'])) != 0, '\n'.join(diff)
 
-def filterext(ext_list, iterable):
-    return iter(s for s in iterable if s.split('.')[-1] in ext_list)
+def filterext(ext_list, filenames):
+    """
+    Filter file names by extension.
+    @param ext_list A list of extensions.
+    @param filenames An iterable object of file names.
+    """
+    return iter(s for s in iterable if any(s.strip().endwith(e) for e in ext_list))
