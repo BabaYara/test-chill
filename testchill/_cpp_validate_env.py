@@ -1,19 +1,22 @@
 import ast as _pyast
+import collections as _pycollections
+import functools as _pyfunctools
 import itertools as _pyitertools
 import random as _pyrandom
 import types as _pytypes
 
+from . import util as _chill_util
 
 _pylambdatype = _pycollections.namedtuple('LambdaType', ['paramtypes','exprtype'])
 _pyarraytype = _pycollections.namedtuple('ArrayType', ['dimensions','basetype'])
 
 
-class CppType(object):
+class _CppType(object):
     def __init__(self):
         pass
 
 
-class CppPrimitiveType(CppType):
+class _CppPrimitiveType(_CppType):
     _bycppname = {
             'char':                 ('char', 'c', 1, False, False, True, False),
             'signed char':          ('signed char', 'b', 1, True, False, False, False),
@@ -30,7 +33,7 @@ class CppPrimitiveType(CppType):
             'double':               ('double', 'd', 8, False, True, False, True)
         }
     def __init__(self, cppname, structfmt, size, isint, isfloat, ischar, issigned):
-        CppType.__init__(self)
+        _CppType.__init__(self)
         self.cppname = cppname
         self.size = size
         self.size_expr = 'sizeof(' + cppname + ')'
@@ -42,7 +45,7 @@ class CppPrimitiveType(CppType):
     
     @staticmethod
     def get_from_cppname(cppname):
-        return CppPrimitiveType(*CppPrimitiveType._bycppname[cppname])
+        return _CppPrimitiveType(*_CppPrimitiveType._bycppname[cppname])
     
     def getfreevars(self, glbls):
         return set()
@@ -56,26 +59,32 @@ class CppPrimitiveType(CppType):
             return float
 
 
-class CppArrayType(CppType):
+class _CppArrayType(_CppType):
     def __init__(self, basetype, dims=[None]):
-        CppType.__init__(self)
+        _CppType.__init__(self)
         self.basetype = basetype
         self.dimensions = dims
     
     def getfreevars(self, glbls):
         return self.basetype.getfreevars(glbls) | set(d.getfreevars(glbls) for d in dimensions if hasattr(d, 'getfreevars'))
+    
+    def getpytype(self):
+        return _pyarraytype(self.dimensions, self.basetype.getpytype())
 
 
-class CppPointerType(CppType):
+class _CppPointerType(_CppType):
     def __init__(self, basetype):
-        CppType.__init__(self)
+        _CppType.__init__(self)
         self.basetype = basetype
     
     def getfreevars(self, glbls):
         return self.basetype.getfreevars(glbls)
+    
+    def getpytype(self):
+        return self.basetype.getpytype()
 
 
-class Parameter(object):
+class _Parameter(object):
     def __init__(self, name, direction, cpptype, init_expr=None):
         self.name = name
         self.direction = direction
@@ -102,12 +111,12 @@ class Parameter(object):
                     stack = [param_dict[var]]
 
 
-class Procedure(object):
+class _Procedure(object):
     def __init__(self, name, rtype, parameters, global_dict):
         self.name = name
         self.rtype = rtype
         self.global_dict = global_dict
-        self.parameters = list(Parameters.order_by_freevars(parameters, global_dict))
+        self.parameters = list(_Parameter.order_by_freevars(parameters, global_dict))
     
     def generatecode(self, codeprinter, istream_name, ostream_name):
         #TODO:
@@ -126,6 +135,9 @@ class _Expr(object):
         expr = _pyast.Expression(_pyast.Lambda(args, self.compile_expr(target_type)))
         expr = _pyast.fix_missing_locations(expr)
         return eval(compile(expr, '<string>', 'eval'))
+    
+    def compile_expr(self, target_type):
+        raise NotImplementedError
 
 
 class _ConstantExpr(_Expr):
@@ -143,6 +155,9 @@ class _ConstantExpr(_Expr):
             return _pyast.Str(str(self.value))
         elif target_type == float:
             return _pyast.Num(float(self.value))
+    
+    def getfreevars(self, glbls):
+        return set()
 
 
 class _NameExpr(_Expr):
@@ -220,10 +235,16 @@ class _LambdaExpr(_Expr):
         self.expr = expr
     
     def compile_expr(self, target_type):
-        assert isinstance(target_type, _pylambdatype)
-        return _pyast.Lambda(
-            _pyast.arguments([_pyast.Name(p, _pyast.Param()) for p in self.params], None, None, []),
-            self.expr.compile_expr(target_type.exprtype))
+        assert hasattr(target_type, 'paramtypes')
+        assert hasattr(target_type, 'exprtype')
+        if _chill_util.python_version_major == 2:
+            return _pyast.Lambda(
+                _pyast.arguments([_pyast.Name(p, _pyast.Param()) for p in self.params], None, None, []),
+                self.expr.compile_expr(target_type.exprtype))
+        else:
+            return _pyast.Lambda(
+                _pyast.arguments([_pyast.arg(p, None) for p in self.params], None, None, [], None, None, [], []),
+                self.expr.compile_expr(target_type.exprtype))
     
     def getfreevars(self, glbls):
         new_glbls = set(glbls)
@@ -244,6 +265,11 @@ class _InvokeExpr(_Expr):
                 [],
                 None,
                 None)
+    
+    def getfreevars(self, glbls):
+        return set(
+            self.func.getfreevars(glbls) |
+            _pyfunctools.reduce(lambda a,v: a | v.getfreevars(glbls), self.parameters, set()))
 
 
 class _Generator(_Expr):
@@ -257,24 +283,24 @@ class _MatrixGenerator(_Generator):
         self.genexpr = genexpr
     
     def _compile_dims(self, target_type):
-        dim_exprs = dict()
-        assert isinstance(target_type, _pyarraytype)
+        dim_exprs = list()
+        assert hasattr(target_type, 'dimensions')
         assert len(target_type.dimensions) == len(self.dimensions)
         for i, d in enumerate(target_type.dimensions):
             if d is None:
                 d = self.dimensions[i]
-            dim_epxrs[i] = d.compile_expr(....)
-        return dim_exprs
+            dim_exprs += [d.compile_expr(int)]
+        return _pyast.List(dim_exprs, _pyast.Load())
     
     def compile_expr(self, target_type):
         dims = self._compile_dims(target_type)
         
         #def array(func,dims):
-        #    return [tuple(d, func(*d)) for d in itertools.product(*(map(range,dims))]
+        #    return [func(*d) for d in itertools.product(*(map(range,dims))]
         ltype = _pylambdatype([int for d in target_type.dimensions], target_type.basetype)
         elt_expr = _pyast.Call(self.genexpr.compile_expr(ltype), [], [], _pyast.Name('_d', _pyast.Load()), None)                  # func(*d)
-        elt_expr = _pyast.Call(_pyast.Name('tuple', _pyast.Load()), [_pyast.Name('_d', _pyast.Load()), elt_expr], [], None, None) # tuple(d, func(*d))
-        pdt_expr = _pyast.Attribute(_pyast.Name('itertools', _pyast.Load()), 'product', _pyast.Load())                            # itertools.product
+        # elt_expr = _pyast.Call(_pyast.Name('tuple', _pyast.Load()), [_pyast.Name('_d', _pyast.Load()), elt_expr], [], None, None) # tuple(d, func(*d))
+        pdt_expr = _pyast.Attribute(_pyast.Name('_pyitertools', _pyast.Load()), 'product', _pyast.Load())                            # itertools.product
         itr_expr = _pyast.Call(_pyast.Name('map', _pyast.Load()), [_pyast.Name('range', _pyast.Load()), dims], [], None, None)    # map(range,dims)
         itr_expr = _pyast.Call(pdt_expr, [], [], itr_expr, None)                                                                  # itertools.product(*(map(range,dims)))
         return _pyast.ListComp(
@@ -282,24 +308,47 @@ class _MatrixGenerator(_Generator):
             [_pyast.comprehension(_pyast.Name('_d', _pyast.Store()), itr_expr, [])])
     
     def getfreevars(self, glbls):
-        return self.genexpr.getfreevars(glbls)
+        return set(
+            self.genexpr.getfreevars(glbls) |
+            _pyfunctools.reduce(lambda a,v: a | v.getfreevars(glbls), filter(lambda x: x is not None, self.dimensions), set()))
 
 
 class _RandomExpr(_Expr):
-    def __init__(self, self.minexpr, self.maxexpr):
+    def __init__(self, minexpr, maxexpr):
+        self.minexpr = minexpr
+        self.maxexpr = maxexpr
         self.expr = _BinExpr(
             _BinExpr(
-                _InvokeExpr(_AttributeExpr(_NameExpr('random'),'random'),[]),
-                '*'
-                _BinExpr(self.maxexpr, '-', self.minexpr)),
+                _InvokeExpr(_AttributeExpr(_NameExpr('_pyrandom'),'random'),[]),
+                '*',
+                _BinExpr(maxexpr, '-', minexpr)),
             '+',
-            self.minexpr)
+            minexpr)
     
     def getfreevars(self, glbls):
         return self.minexpr.getfreevars(glbls) | self.maxexpr.getfreevars(glbls)
     
     def compile_expr(self, target_type):
-        return self.expr.compile_expr(target_type)
-        
-        
-        
+        if target_type == int:
+            return _pyast.Call(_pyast.Name('int', _pyast.Load()),[self.expr.compile_expr(float)],[],None,None)
+        elif target_type == float:
+            return self.expr.compile_expr(target_type)
+        assert False
+
+
+### What to import from * ###
+CppType = _CppType
+CppPrimitiveType = _CppPrimitiveType
+CppArrayType = _CppArrayType
+CppPointerType = _CppPointerType
+
+ConstantExpr = _ConstantExpr
+NameExpr = _NameExpr
+AttributeExpr = _AttributeExpr
+BinExpr = _BinExpr
+UnaryExpr = _UnaryExpr
+LambdaExpr = _LambdaExpr
+InvokeExpr = _InvokeExpr
+MatrixGenerator = _MatrixGenerator
+RandomExpr = _RandomExpr
+

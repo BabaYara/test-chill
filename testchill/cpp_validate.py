@@ -4,7 +4,7 @@ from . import util
 
 def parse_testproc_python(txt):
     glb = dict()
-    exec('import testchill._cpp_validate_env\nfrom testchill._cpp_validate_env import *', glb)
+    exec('import testchill._cpp_validate_env\nfrom testchill._cpp_validate_env import *', None, glb)
     return eval(txt, glb)
 
 def parse_testprocs(srcfile, wd=os.getcwd()):
