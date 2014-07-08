@@ -10,6 +10,7 @@ rules:
 <c-type> ::=
     <c-type>:bt '*'                                         => CppPointerType(bt)
     <c-type>:bt <c-array-dim-list>:dims                     => CppArrayType(bt, dims)
+    'void'                                                  => CppVoidType()
     'char'                                                  => CppPrimitiveType.get_from_cppname('char')
     'signed' 'char'                                         => CppPrimitiveType.get_from_cppname('signed char')
     'unsigned' 'char'                                       => CppPrimitiveType.get_from_cppname('unsigned char')

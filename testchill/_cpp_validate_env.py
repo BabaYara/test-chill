@@ -59,6 +59,17 @@ class _CppPrimitiveType(_CppType):
             return float
 
 
+class _CppVoidType(_CppType):
+    def __init__(self):
+        self.cppname = 'void'
+    
+    def getfreevars(self, glbls):
+        return set()
+    
+    def getpytype(self):
+        return type(None)
+
+
 class _CppArrayType(_CppType):
     def __init__(self, basetype, dims=[None]):
         _CppType.__init__(self)
@@ -112,11 +123,10 @@ class _Parameter(object):
 
 
 class _Procedure(object):
-    def __init__(self, name, rtype, parameters, global_dict):
+    def __init__(self, name, rtype, parameters):
         self.name = name
         self.rtype = rtype
-        self.global_dict = global_dict
-        self.parameters = list(_Parameter.order_by_freevars(parameters, global_dict))
+        self.parameters = parameters
     
     def generatecode(self, codeprinter, istream_name, ostream_name):
         #TODO:
@@ -339,6 +349,7 @@ class _RandomExpr(_Expr):
 ### What to import from * ###
 CppType = _CppType
 CppPrimitiveType = _CppPrimitiveType
+CppVoidType = _CppVoidType
 CppArrayType = _CppArrayType
 CppPointerType = _CppPointerType
 
@@ -351,4 +362,7 @@ LambdaExpr = _LambdaExpr
 InvokeExpr = _InvokeExpr
 MatrixGenerator = _MatrixGenerator
 RandomExpr = _RandomExpr
+
+Procedure = _Procedure
+Parameter = _Parameter
 
