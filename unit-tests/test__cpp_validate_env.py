@@ -1,5 +1,6 @@
 import ast
 import itertools
+import pylang.debug
 import random
 import unittest
 
@@ -133,8 +134,34 @@ class Test_CppValidateEnv(unittest.TestCase):
         random.seed(0)
         ### data for generating ###
         ### data for parsing ###
-        self.parse_test_data = [
-                (('procedure void q()',), None)
+        self.parse_procedure_test_data = [
+                (('procedure void q()',), ('void', 'q', 0)),
+                (('procedure int q()',), ('int', 'q', 0)),
+                (('procedure float q()',), ('float', 'q', 0)),
+                (('procedure unsigned int q()',), ('unsigned int', 'q', 0)),
+                (('procedure void q(in int x)',), ('void', 'q', 1)),
+                (('procedure void q(in int x, in int y)',), ('void', 'q', 2)),
+            ]
+        _mm_proc = '''
+            procedure void mm(
+                in  float* A    = matrix([an,ambn],evendist2),
+                in  float* B    = matrix([ambn,bm],evendist2),
+                out float* C    = matrix([an,bm],lambda i,j: 0),
+                in  int    ambn = random(8,16),
+                in  int    an   = random(8,16),
+                in  int    bm   = random(8,16))
+            '''
+        self.parse_parameter_test_data = [
+                (('procedure void mm(in int x)',), [(0, 'x', 'int', 'in', False, set())]),
+                (('procedure void mm(out int* x = 10)',), [(0, 'x', 'int*', 'out', True, set())]),
+                ((_mm_proc,),[
+                        (0, 'A', 'float*', 'in', True, set(['an','ambn','evendist2'])),
+                        (1, 'B', 'float*', 'in', True, set(['ambn','bm','evendist2'])),
+                        (2, 'C', 'float*', 'out', True, set(['an','bm'])),
+                        (3, 'ambn', 'int', 'in', True, set([])),
+                        (4, 'an', 'int', 'in', True, set([])),
+                        (5, 'bm', 'int', 'in', True, set([]))
+                    ]),
             ]
     
     def run_expr_test_data(self, ctor, test_data):
@@ -176,7 +203,28 @@ class Test_CppValidateEnv(unittest.TestCase):
     def test__RandomExpr(self):
         self.run_expr_test_data(validate_env._RandomExpr, self._RandomExpr_test_data)
     
-    def test_parse(self):
-        parse_func = testchill.cpp_validate._parse_testproc_script
-        for args, _ in self.parse_test_data:
-            print(parse_func(*args))
+    def test_parse_procedure(self):
+        parse_func = lambda s: list(testchill.cpp_validate._parse_testproc_script(s))[0]
+        for args, expected in self.parse_procedure_test_data:
+            rtype_exp, name_exp, param_count_exp = expected
+            proc = parse_func(*args)
+            self.assertEqual(str(proc.rtype), rtype_exp)
+            self.assertEqual(proc.name, name_exp)
+            self.assertEqual(len(proc.parameters), param_count_exp)
+    
+    def test_parse_parameter(self):
+        #pylang.debug.enable(['pylang.parser.BaseTextParser.parse'])
+        parse_func = lambda s: list(testchill.cpp_validate._parse_testproc_script(s))[0]
+        for args, expected in self.parse_parameter_test_data:
+            proc = parse_func(*args)
+            for param_exp in expected:
+                index, name_exp, ctype_exp, direction_exp, has_init_exp, freevars_exp = param_exp
+                param = proc.parameters[index]
+                self.assertEqual(param.name, name_exp)
+                self.assertEqual(str(param.cpptype), ctype_exp)
+                self.assertEqual(param.direction, direction_exp)
+                self.assertEqual(param.init_expr is not None, has_init_exp)
+                self.assertEqual(param.getfreevars(), freevars_exp)
+        #pylang.debug.enable(['pylang.parser.BaseTextParser.parse'], False)
+            
+            

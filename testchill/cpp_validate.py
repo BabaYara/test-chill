@@ -7,7 +7,8 @@ _script_parser = None
 def _get_script_parser():
     global _script_parser
     if _script_parser is None:
-        _script_parser = pickle.load(open('testchill/cpp_validate/parser.pickle','rb'))
+        with open('testchill/cpp_validate/parser.pickle','rb') as f:
+            _script_parser = pickle.load(f)
     return _script_parser
 
 def _parse_testproc_python(txt):

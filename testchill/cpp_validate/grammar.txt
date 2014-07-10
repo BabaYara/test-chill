@@ -2,7 +2,7 @@ terminals:
     Identifier     '[a-zA-Z_][a-zA-Z_0-9]*'
     NumericLiteral '[0-9]+(\.[0-9]+)?'
     WS             '\s+'
-ignore: WS, NL
+ignore: WS, <NL>
 rules:
 <proc> ::=
     'procedure' <c-type>:rtype Identifier:name '(' <param-list-opt>:plist ')'
@@ -26,6 +26,8 @@ rules:
     'double'                                                => CppPrimitiveType.get_from_cppname('double')
 <c-array-dim-list> ::=
     <c-array-dim-list>:dlist '[' <expr>:e ']'               => dlist + [e]
+    <c-array-dim-list>:dlist '[' ']'                        => dlist + [None]
+    '[' ']'                                                 => [None]
     '[' <expr>:e ']'                                        => [e]
 <param-list-opt> ::=
     eps                                                     => []
@@ -83,4 +85,11 @@ rules:
 <dim-expr> ::=
     '*'                                                     => None
     <expr>:e                                                => e
+<id-list-opt> ::=
+    eps                                                     => []
+    <id-list>:l                                             => l
+<id-list> ::=
+    <id-list>:l ',' Identifier:ident                        => l + [ident]
+    Identifier:ident                                        => [ident]
+    
 

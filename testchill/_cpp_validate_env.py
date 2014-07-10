@@ -14,6 +14,9 @@ _pyarraytype = _pycollections.namedtuple('ArrayType', ['dimensions','basetype'])
 class _CppType(object):
     def __init__(self):
         pass
+    
+    def __repr__(self):
+        return "{}".format(str(self))
 
 
 class _CppPrimitiveType(_CppType):
@@ -57,6 +60,9 @@ class _CppPrimitiveType(_CppType):
             return int
         elif self.isfloat:
             return float
+    
+    def __str__(self):
+        return self.cppname
 
 
 class _CppVoidType(_CppType):
@@ -68,6 +74,9 @@ class _CppVoidType(_CppType):
     
     def getpytype(self):
         return type(None)
+    
+    def __str__(self):
+        return 'void'
 
 
 class _CppArrayType(_CppType):
@@ -77,10 +86,16 @@ class _CppArrayType(_CppType):
         self.dimensions = dims
     
     def getfreevars(self, glbls):
-        return self.basetype.getfreevars(glbls) | set(d.getfreevars(glbls) for d in dimensions if hasattr(d, 'getfreevars'))
+        freevars = self.basetype.getfreevars(glbls)
+        for fv in iter(d.getfreevars(glbls) for d in self.dimensions if hasattr(d, 'getfreevars')):
+            freevars = freevars | fv
+        return freevars
     
     def getpytype(self):
         return _pyarraytype(self.dimensions, self.basetype.getpytype())
+    
+    def __str__(self):
+        return '{}[{}]'.format(str(self.basetype), ']['.join(map(str,self.dimensions)))
 
 
 class _CppPointerType(_CppType):
@@ -93,10 +108,13 @@ class _CppPointerType(_CppType):
     
     def getpytype(self):
         return self.basetype.getpytype()
+    
+    def __str__(self):
+        return '{}*'.format(str(self.basetype))
 
 
 class _Parameter(object):
-    def __init__(self, name, direction, cpptype, init_expr=None):
+    def __init__(self, name, cpptype, direction, init_expr=None):
         self.name = name
         self.direction = direction
         self.cpptype = cpptype
@@ -105,7 +123,7 @@ class _Parameter(object):
     @staticmethod
     def order_by_freevars(param_list, glbls):
         complete = set()
-        stack = list((p.name, p, p.init_expr.getfreevars(glbls) | p.cpptype.getfreevars(glbls)))
+        stack = list((p.name, p, p.getfreevars(glbls)) for p in param_list)
         param_dict = dict((p[0], p) for p in stack)
         while len(stack):
             name, param, freevars = stack[0]
@@ -120,6 +138,13 @@ class _Parameter(object):
                 stack = [(name, param, freevars)] + stack
                 for var in freevars:
                     stack = [param_dict[var]]
+    
+    def getfreevars(self, glbls=set()):
+        freevars = set()
+        if self.init_expr is not None:
+            freevars = freevars | self.init_expr.getfreevars(glbls)
+        freevars = freevars | self.cpptype.getfreevars(glbls)
+        return freevars
 
 
 class _Procedure(object):
@@ -168,6 +193,9 @@ class _ConstantExpr(_Expr):
     
     def getfreevars(self, glbls):
         return set()
+    
+    def __str__(self):
+        return self.value
 
 
 class _NameExpr(_Expr):
@@ -182,6 +210,9 @@ class _NameExpr(_Expr):
             return set([self.name])
         else:
             return set()
+    
+    def __str__(self):
+        return self.name
 
 
 class _AttributeExpr(_Expr):
@@ -197,6 +228,9 @@ class _AttributeExpr(_Expr):
     
     def getfreevars(self, glbls):
         return self.expr.getfreevars(glbls)
+    
+    def __str__(self):
+        return '{}.{}'.format(str(self.expr), self.name)
 
 
 class _BinExpr(_Expr):
@@ -220,6 +254,9 @@ class _BinExpr(_Expr):
     
     def getfreevars(self, glbls):
         return self.left.getfreevars(glbls) | self.right.getfreevars(glbls)
+    
+    def __str__(self):
+        return '({}{}{})'.format(str(self.left),self.op,str(self.right))
 
 
 class _UnaryExpr(_Expr):
@@ -237,6 +274,9 @@ class _UnaryExpr(_Expr):
     
     def getfreevars(self, glbls):
         return self.expr.getfreevars(glbls)
+    
+    def __str__(self):
+        return '({}{})'.format(self.op, str(self.expr))
 
 
 class _LambdaExpr(_Expr):
@@ -260,6 +300,9 @@ class _LambdaExpr(_Expr):
         new_glbls = set(glbls)
         new_glbls = new_glbls | set(self.params)
         return self.expr.getfreevars(new_glbls)
+    
+    def __str__(self):
+        return 'lambda {}:{}'.format(','.join(map(str,self.params)), str(self.expr))
 
 
 class _InvokeExpr(_Expr):
@@ -280,6 +323,9 @@ class _InvokeExpr(_Expr):
         return set(
             self.func.getfreevars(glbls) |
             _pyfunctools.reduce(lambda a,v: a | v.getfreevars(glbls), self.parameters, set()))
+    
+    def __str__(self):
+        return '{}({})'.format(str(self.func),','.join(map(str,self.parameters)))
 
 
 class _Generator(_Expr):
@@ -321,6 +367,9 @@ class _MatrixGenerator(_Generator):
         return set(
             self.genexpr.getfreevars(glbls) |
             _pyfunctools.reduce(lambda a,v: a | v.getfreevars(glbls), filter(lambda x: x is not None, self.dimensions), set()))
+    
+    def __str__(self):
+        return 'matrix([{}],{})'.format(','.join(map(str,self.dimensions)),str(self.genexpr))
 
 
 class _RandomExpr(_Expr):
@@ -344,6 +393,9 @@ class _RandomExpr(_Expr):
         elif target_type == float:
             return self.expr.compile_expr(target_type)
         assert False
+    
+    def __str__(self):
+        return 'random({},{})'.format(str(self.minexpr),str(self.maxexpr))
 
 
 ### What to import from * ###
