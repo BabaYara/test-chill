@@ -11,7 +11,7 @@ import testchill.gcov as gcov
 class TestGCov(unittest.TestCase):
     def setUp(self):
         self.cprog_dir = os.path.join(os.getcwd(), 'unit-tests/cprog')
-        self.cprog_bin = os.path.join(self.cprog_dir, 'sorter')
+        self.cprog_bin = os.path.join(self.cprog_dir, 'bin/sorter')
     
     def build_prog(self):
         self.clean_prog()
@@ -91,7 +91,7 @@ class TestGCov(unittest.TestCase):
         cov.merge(gcov.Gcov.parse(self.cprog_dir, 'reverse'))
         #pprint.pprint(vars(cov.files['QuickSorter.cc']))
         #TODO: assert something
-        cov.pretty_print()
+        #cov.pretty_print()
     
     def tearDown(self):
         self.clean_prog()

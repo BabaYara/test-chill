@@ -3,8 +3,10 @@ import itertools
 import random
 import unittest
 
-import testchill._cpp_validate_env as validate
+import testchill._cpp_validate_env as validate_env
+import testchill.cpp_validate
 
+## Support functions ##
 class Point(object):
     def __init__(self, x, y):
         self.x = x
@@ -40,36 +42,38 @@ def _expr_test_invoke(tc, expr, fv_bindings, rt_bindings, target_type, exp_freev
     tc.assertEqual(target_type.exprtype, type(value))
 
 def lambdatype(param_types, etype):
-    return validate._pylambdatype(param_types, etype)
+    return validate_env._pylambdatype(param_types, etype)
 
 def arraytype(dims, etype):
-    return validate._pyarraytype(dims, etype)
+    return validate_env._pyarraytype(dims, etype)
 
+
+## Test case class ##
 class Test_CppValidateEnv(unittest.TestCase):
     def setUp(self):
         ### data for the abstract syntax tree ###
-        _const_4 = validate._ConstantExpr('4')
-        _const_3 = validate._ConstantExpr('3')
-        _const_2 = validate._ConstantExpr('2')
-        _const_0 = validate._ConstantExpr('0')
-        _name_x = validate._NameExpr('x')
-        _name_y = validate._NameExpr('y')
-        _name_p = validate._NameExpr('p')
-        _name_pow = validate._NameExpr('pow')
-        _attr_px = validate._AttributeExpr(_name_p, 'x')
-        _attr_py = validate._AttributeExpr(_name_p, 'y')
-        _add_3_2 = validate._BinExpr(_const_3, '+', _const_2)
-        _add_x_2 = validate._BinExpr(_name_x, '+', _const_2)
-        _pow_x_2 = validate._BinExpr(_name_x, '**', _const_2)
+        _const_4 = validate_env._ConstantExpr('4')
+        _const_3 = validate_env._ConstantExpr('3')
+        _const_2 = validate_env._ConstantExpr('2')
+        _const_0 = validate_env._ConstantExpr('0')
+        _name_x = validate_env._NameExpr('x')
+        _name_y = validate_env._NameExpr('y')
+        _name_p = validate_env._NameExpr('p')
+        _name_pow = validate_env._NameExpr('pow')
+        _attr_px = validate_env._AttributeExpr(_name_p, 'x')
+        _attr_py = validate_env._AttributeExpr(_name_p, 'y')
+        _add_3_2 = validate_env._BinExpr(_const_3, '+', _const_2)
+        _add_x_2 = validate_env._BinExpr(_name_x, '+', _const_2)
+        _pow_x_2 = validate_env._BinExpr(_name_x, '**', _const_2)
         
-        _name_i = validate._NameExpr('i')
-        _lambda_i = validate._LambdaExpr(['i'],_name_i)
+        _name_i = validate_env._NameExpr('i')
+        _lambda_i = validate_env._LambdaExpr(['i'],_name_i)
         
-        _name_j = validate._NameExpr('j')
-        _const_10 = validate._ConstantExpr('10')
-        _mul_i_10 = validate._BinExpr(_name_i, '*', _const_10)
-        _add_mul_i_10_j = validate._BinExpr(_mul_i_10, '+', _name_j)
-        _lambda_ij = validate._LambdaExpr(['i','j'],_add_mul_i_10_j)
+        _name_j = validate_env._NameExpr('j')
+        _const_10 = validate_env._ConstantExpr('10')
+        _mul_i_10 = validate_env._BinExpr(_name_i, '*', _const_10)
+        _add_mul_i_10_j = validate_env._BinExpr(_mul_i_10, '+', _name_j)
+        _lambda_ij = validate_env._LambdaExpr(['i','j'],_add_mul_i_10_j)
         
         self._ConstantExpr_test_data = [
                 (('3',), set(), dict(), int, set(), int(3)),
@@ -80,8 +84,8 @@ class Test_CppValidateEnv(unittest.TestCase):
                 (('x',), {'x'}, {'x':3}, int, set(), int(3))
             ]
         self._AttributeExpr_test_data = [
-                ((validate._NameExpr('p'),'x'), set(), {'p':Point(3,0)}, int, {'p'}, int(3)),
-                ((validate._NameExpr('p'),'x'), {'p'}, {'p':Point(3,0)}, int, set(), int(3))
+                ((validate_env._NameExpr('p'),'x'), set(), {'p':Point(3,0)}, int, {'p'}, int(3)),
+                ((validate_env._NameExpr('p'),'x'), {'p'}, {'p':Point(3,0)}, int, set(), int(3))
             ]
         self._BinExpr_test_data = [
                 ((_const_3, '+', _const_2), set(), dict(), int, set(), int(5)),
@@ -127,45 +131,52 @@ class Test_CppValidateEnv(unittest.TestCase):
                 ((_name_x,_const_4), set(), {'_pyrandom': random, 'x':0}, int, {'x'}, int(random.random()*4)),
             ]
         random.seed(0)
+        ### data for generating ###
         ### data for parsing ###
-        self.parse_
+        self.parse_test_data = [
+                (('procedure void q()',), None)
+            ]
     
-    def run_test_data(self, ctor, test_data):
+    def run_expr_test_data(self, ctor, test_data):
         for ctor_args, fv_bindings, rt_bindings, target_type, exp_freevars, exp_value in test_data:
             expr = ctor(*ctor_args)
             _expr_test(self, expr, fv_bindings, rt_bindings, target_type, exp_freevars, exp_value)
     
-    def run_test_data_list(self, ctor, test_data):
+    def run_expr_test_data_list(self, ctor, test_data):
         for ctor_args, fv_bindings, rt_bindings, target_type, exp_freevars, exp_value in test_data:
             expr = ctor(*ctor_args)
             _expr_test_list(self, expr, fv_bindings, rt_bindings, target_type, exp_freevars, exp_value)
     
-    def run_test_data_invoke(self, ctor, test_data):
+    def run_expr_test_data_invoke(self, ctor, test_data):
         for ctor_args, fv_bindings, rt_bindings, target_type, exp_freevars, invoke_args, exp_value in test_data:
             expr = ctor(*ctor_args)
             _expr_test_invoke(self, expr, fv_bindings, rt_bindings, target_type, exp_freevars, invoke_args, exp_value)
     
     def test__ConstantExpr(self):
-        self.run_test_data(validate._ConstantExpr, self._ConstantExpr_test_data)
+        self.run_expr_test_data(validate_env._ConstantExpr, self._ConstantExpr_test_data)
     
     def test__NameExpr(self):
-        self.run_test_data(validate._NameExpr, self._NameExpr_test_data)
+        self.run_expr_test_data(validate_env._NameExpr, self._NameExpr_test_data)
     
     def test__AttributeExpr(self):
-        self.run_test_data(validate._AttributeExpr, self._AttributeExpr_test_data)
+        self.run_expr_test_data(validate_env._AttributeExpr, self._AttributeExpr_test_data)
     
     def test__UnaryExpr(self):
-        self.run_test_data(validate._UnaryExpr, self._UnaryExpr_test_data)
+        self.run_expr_test_data(validate_env._UnaryExpr, self._UnaryExpr_test_data)
     
     def test__LambdaExpr(self):
-        self.run_test_data_invoke(validate._LambdaExpr, self._LambdaExpr_test_data)
+        self.run_expr_test_data_invoke(validate_env._LambdaExpr, self._LambdaExpr_test_data)
     
     def test__InvokeExpr(self):
-        self.run_test_data(validate._InvokeExpr, self._InvokeExpr_test_data)
+        self.run_expr_test_data(validate_env._InvokeExpr, self._InvokeExpr_test_data)
     
     def test__MatrixGenerator(self):
-        self.run_test_data_list(validate._MatrixGenerator, self._MatrixGenerator_test_data)
+        self.run_expr_test_data_list(validate_env._MatrixGenerator, self._MatrixGenerator_test_data)
     
     def test__RandomExpr(self):
-        self.run_test_data(validate._RandomExpr, self._RandomExpr_test_data)
-        
+        self.run_expr_test_data(validate_env._RandomExpr, self._RandomExpr_test_data)
+    
+    def test_parse(self):
+        parse_func = testchill.cpp_validate._parse_testproc_script
+        for args, _ in self.parse_test_data:
+            print(parse_func(*args))

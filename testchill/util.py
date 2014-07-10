@@ -1,5 +1,6 @@
 import difflib
 import functools
+import itertools
 import logging
 import os
 import re
@@ -135,7 +136,7 @@ def filterext(ext_list, filenames):
     @param ext_list A list of extensions.
     @param filenames An iterable object of file names.
     """
-    return iter(s for s in iterable if any(s.strip().endwith(e) for e in ext_list))
+    return iter(s for s in filenames if any(s.strip().endswith(e) for e in ext_list))
 
 def extract_tag(tagname, filename, wd=os.getcwd()):
     """
@@ -148,4 +149,16 @@ def extract_tag(tagname, filename, wd=os.getcwd()):
     """
     from . import _extract
     return _extract.extract_tag(tagname, filename, wd)
-    
+
+def textstream(txt):
+    """
+    Creates a stream from text. Intended to hide version differences between 2 and 3.
+    @param txt A string to use as the default data in a stream.
+    """
+    if python_version_major == 2:
+        import StringIO
+        return StringIO.StringIO(txt)
+    elif python_version_major == 3:
+        import io
+        return io.StringIO(txt)
+

@@ -138,6 +138,7 @@ class BuildChillTestCase(test.TestCase):
         target = self.config.make_target()
         util.shell('make', [depend_target] + [self.build_args], env=self.build_env, wd=self.config.chill_dir)
         util.shell('make', [target] + [self.build_args], env=self.build_env, wd=self.config.chill_dir)
+        return self.make_pass()
         
     def tearDown(self):
         """
@@ -249,6 +250,7 @@ class RunChillTestCase(test.SequencialTestCase):
         Attempts to compile the source file before any transformation is performed. Fails if gcc fails.
         """
         self.out['compile_src.stdout'] = util.shell('gcc', ['-c', self.chill_src], wd=self.wd)
+        return tc.make_pass()
     
     def run_script(self, tc):
         """
@@ -258,12 +260,14 @@ class RunChillTestCase(test.SequencialTestCase):
         if self.config.build_cuda and not os.path.exists(os.path.join(self.wd, 'cudaize.lua')):
             return test.TestResult.error(test.FailedTestResult, tc, reason='cudaize.lua was missing from the working directory.')
         self.out['run_script.stdout'] = util.shell(self.chill_bin, [self.chill_script], wd=self.wd)
+        return tc.make_pass()
     
     def compile_gensrc(self, tc):
         """
         Attempts to compile the generated source file. Fails if gcc fails.
         """
         self.out['compile_gensrc.stdout'] = util.shell('gcc', ['-c', self.chill_gensrc], wd=self.wd)
+        return tc.make_pass()
     
     def check_run_script_stdout(self, tc):
         """
@@ -272,4 +276,5 @@ class RunChillTestCase(test.SequencialTestCase):
         isdiff, diff = util.isdiff(self.out['run_script.stdout'], self.expected['run_script.stdout'])
         if isdiff:
             return test.TestResult.make_fail(test.FailedTestResult, tc, reason='Diff:\n' + diff)
+        return tc.make_pass()
     

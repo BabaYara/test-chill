@@ -81,11 +81,17 @@ $(info unit tests                  $(UNIT_TEST_DIR))
 endif
 ### ----------------- ###
 
-DIRTY_EXTS=pyc o log
+DIRTY_EXTS=pyc o log pickle
 DIRTY_FILES=$(foreach de,$(DIRTY_EXTS),$(shell find . -name "*.$(de)"))
 DIRTY_DIRS=$(shell find . -name '__pycache__' -and -type d) $(STAGING_DIR) pylang
 
+CORE_TESTS:=util gcov _cpp_validate_env test __main__ _extract
+OMGEA_TESTS:=omega
+CHILL_TESTS:=chill
 
+CORE_TESTS:=$(addsuffix .py,$(addprefix unit-tests/test_,$(CORE_TESTS)))
+OMEGA_TESTS:=$(addsuffix .py,$(addprefix unit-tests/test_,$(OMEGA_TESTS)))
+CHILL_TESTS:=$(addsuffix .py,$(addprefix unit-tests/test_,$(CHILL_TESTS)))
 
 ### The all target ###
 .PHONY: all
@@ -97,6 +103,7 @@ all:
 ### This will install the chill_test module ###
 .PHONY: install
 install: pylang
+	$(PYTHON) makeparser.py
 	#TODO: maybe run a setup or something
 
 
@@ -117,6 +124,7 @@ clean:
 
 pylang:
 	git clone https://github.com/dhuth/pylang.git pylang-tmp
+	$(PYTHON) pylang-tmp/make_grammar_parsers.py
 	cp -r pylang-tmp/pylang pylang
 	rm -rf pylang-tmp
 
@@ -132,15 +140,15 @@ test: $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
 
 .PHONY: test-chill
 test-chill: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
-	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_omega.py unit-tests/test_chill.py
+	$(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS) $(CHILL_TESTS)
 
 .PHONY: test-omega
 test-omega: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC)
-	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_omega.py
+	$(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS)
 
 .PHONY: test-core
 test-core: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
-	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_util.py unit-test/test_gcov.py unit-tests/test_codegen.py unit-tests/test_test.py unit-tests/test___main__.py
+	$(EXPORT) $(PYTHON) -m unittest $(CORE_TESTS)
 .PHONY:
 test-core-%:
 	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_$*.py

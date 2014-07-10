@@ -11,6 +11,9 @@ import testchill.util as util
 class Named(object):
     def __init__(self, name):
         self.name = name
+    
+    def setresult(self, res):
+        pass
 
 def make_tc(rfunc=None, sufunc=None, tdfunc=None, name=None):
     class SomeTestCase(test.TestCase):

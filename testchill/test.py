@@ -259,6 +259,18 @@ class TestCase(object):
         Called after a test issues a result and before tearDown is called.
         """
         self.test_result = test_result
+    
+    def make_pass(self, result_type=TestResult, *args, **kwargs):
+        """
+        Make a passed result for this testcase.
+        """
+        return TestResult.make_pass(result_type, self, *args, **kwargs)
+    
+    def make_fail(self, result_type=FailedTestResult, *args, **kwargs):
+        """
+        Make a failed result for this testcase.
+        """
+        return TestResult.make_fail(result_type, self, *args, **kwargs)
 
 
 class SequencialTestCase(TestCase):
