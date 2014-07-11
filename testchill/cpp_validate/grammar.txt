@@ -1,12 +1,27 @@
 terminals:
     Identifier     '[a-zA-Z_][a-zA-Z_0-9]*'
     NumericLiteral '[0-9]+(\.[0-9]+)?'
+    Comment        '\#([^\x0a])*'
     WS             '\s+'
 ignore: WS, <NL>
 rules:
+<proc-unit> ::=
+    <with-stmt>:w                                           => w
+    <proc>:p                                                => p
+<with-stmt> ::=
+    'with' '{' <with-decl-list-opt>:decls '}' <proc-unit>:p => addbindings(p, dict(decls))
+<with-decl-list-opt> ::=
+    eps                                                     => []
+    <with-decl-list>:l                                      => l
+<with-decl-list> ::=
+    <with-decl-list>:l ',' <with-decl>:decl                 => l + [decl]
+    <with-decl>:decl                                        => [decl]
+<with-decl> ::=
+    Identifier:name '=' <expr>:e                            => (name, e)
+    
 <proc> ::=
     'procedure' <c-type>:rtype Identifier:name '(' <param-list-opt>:plist ')'
-                                                        => Procedure(name, rtype, plist)
+                                                            => Procedure(name, rtype, plist)
 <c-type> ::=
     <c-type>:bt '*'                                         => CppPointerType(bt)
     <c-type>:bt <c-array-dim-list>:dims                     => CppArrayType(bt, dims)

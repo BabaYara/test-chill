@@ -135,7 +135,7 @@ test: $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
 	@echo "Note: This target tests the test suite it's self, not chill"
 	@echo "To test chill, run python -m testchill ..."
 	@echo "-----------------------------------------------------------"
-	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_util.py unit-tests/test_test.py unit-tests/test_omega.py unit-tests/test_chill.py unit-tests/test___main__.py
+	$(EXPORT) $(PYTHON) -m unittest $(CORE_TESTS) $(OMEGA_ETSTS) $(CHILL_TESTS)
 
 
 .PHONY: test-chill
