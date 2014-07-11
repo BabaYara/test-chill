@@ -86,7 +86,7 @@ DIRTY_FILES=$(foreach de,$(DIRTY_EXTS),$(shell find . -name "*.$(de)"))
 DIRTY_DIRS=$(shell find . -name '__pycache__' -and -type d) $(STAGING_DIR) pylang
 
 CORE_TESTS:=util gcov _cpp_validate_env test __main__ _extract
-OMGEA_TESTS:=omega
+OMEGA_TESTS:=omega
 CHILL_TESTS:=chill
 
 CORE_TESTS:=$(addsuffix .py,$(addprefix unit-tests/test_,$(CORE_TESTS)))
@@ -130,28 +130,37 @@ pylang:
 
 ### Test the test harness ###
 .PHONY: test
-test: $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
+test: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
 	@echo "-----------------------------------------------------------"
 	@echo "Note: This target tests the test suite it's self, not chill"
 	@echo "To test chill, run python -m testchill ..."
 	@echo "-----------------------------------------------------------"
-	$(EXPORT) $(PYTHON) -m unittest $(CORE_TESTS) $(OMEGA_ETSTS) $(CHILL_TESTS)
+	$(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS) $(CORE_TESTS) $(CHILL_TESTS)
+	rm -rf $(STAGING_DIR)
 
 
 .PHONY: test-chill
 test-chill: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
 	$(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS) $(CHILL_TESTS)
+	rm -rf $(STAGING_DIR)
+
 
 .PHONY: test-omega
 test-omega: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC)
 	$(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS)
+	rm -rf $(STAGING_DIR)
+
 
 .PHONY: test-core
-test-core: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
+test-core: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC) make-omega
 	$(EXPORT) $(PYTHON) -m unittest $(CORE_TESTS)
+	rm -rf $(STAGING_DIR)
+
+
 .PHONY:
 test-core-%:
 	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_$*.py
+
 
 .PHONY: test-debug
 debug:
@@ -181,9 +190,20 @@ $(CHILL_RELEASE_SRC): $(OMEGA_RELEASE_SRC) $(STAGIN_DIR_BIN)
 
 $(OMEGA_DEV_SRC): $(STAGING_DIR_BIN)
 	svn export $(SVN_OMEGA_DEV) $(OMEGA_DEV_SRC)
+	#cd $(OMEGA_DEV_SRC); $(MAKE) depend
+	#cd $(OMEGA_DEV_SRC); $(MAKE)
 
 $(OMEGA_RELEASE_SRC): $(STAGING_DIR_BIN)
 	svn export $(SVN_OMEGA_RELEASE) $(OMEGA_RELEASE_SRC)
+	#cd $(OMEGA_RELEASE_SRC); $(MAKE) depend
+	#cd $(OMEGA_RELEASE_SRC): $(MAKE)
+
+.PHONY: make-omega
+make-omega:
+	cd $(OMEGA_DEV_SRC); $(MAKE) depend
+	cd $(OMEGA_DEV_SRC); $(MAKE)
+	cd $(OMEGA_RELEASE_SRC); $(MAKE) depend
+	cd $(OMEGA_RELEASE_SRC); $(MAKE)
 
 #$(STAGING_DIR):
 #	mkdir -p $(STAGING_DIR)

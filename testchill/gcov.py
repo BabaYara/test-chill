@@ -191,7 +191,7 @@ class GcovSet(object):
         for src, grp in itertools.groupby(covlist, lambda c: c.srcdir):
             files = functools.reduce(lambda a, c: a | c, grp).files.values()
             file_lines = iter((f.src_file_name, iter(l for l in f.lines if l.count() == 0)) for f in files)
-            yield src, file_lines        
+            yield src, file_lines
     
     def pretty_print(self, outfile=sys.stdout, width=60, stats=['unexecuted', 'unexecuted.bysrc']):
         print('='*width, file=outfile)
@@ -211,5 +211,3 @@ class GcovSet(object):
         #print('='*width, file=outfile)
         #print(prog, file=outfile)
         #print('-'*width, file=outfile)
-            
-        

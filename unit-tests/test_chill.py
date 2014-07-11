@@ -3,6 +3,7 @@ import os
 import unittest
 
 import testchill.chill
+import testchill.gcov
 import testchill.test
 import testchill.util
 
@@ -49,12 +50,13 @@ class TestChillTestCases(unittest.TestCase):
         self.omega_rel_dir = os.getenv('OMEGA_RELEASE_SRC')
         self.bin_dir = os.getenv('STAGING_DIR_BIN')
         self.wd = os.getenv('STAGING_DIR_WD')
+        self.build_options = {'coverage':False}
     
     def tearDown(self):
         pass
     
     def test_chill_dev(self):
-        tc = testchill.chill.BuildChillTestCase(self.config())
+        tc = testchill.chill.BuildChillTestCase(self.config(), self.build_options)
         self.assertEqual(tc.config.name(), 'chill')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-chill')
@@ -65,7 +67,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_chill_dev_lua(self):
-        tc = testchill.chill.BuildChillTestCase(self.config(script_lang='lua'))
+        tc = testchill.chill.BuildChillTestCase(self.config(script_lang='lua'), self.build_options)
         self.assertEqual(tc.config.name(), 'chill-lua')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-chill')
@@ -77,7 +79,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_chill_dev_python(self):
-        tc = testchill.chill.BuildChillTestCase(self.config(script_lang='python'))
+        tc = testchill.chill.BuildChillTestCase(self.config(script_lang='python'), self.build_options)
         self.assertEqual(tc.config.name(), 'chill-python')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-chill')
@@ -89,7 +91,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_cudachill_dev(self):
-        tc = testchill.chill.BuildChillTestCase(self.config(build_cuda=True))
+        tc = testchill.chill.BuildChillTestCase(self.config(build_cuda=True), self.build_options)
         self.assertEqual(tc.config.name(), 'cuda-chill')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-cuda-chill')
@@ -100,7 +102,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_cudachill_dev(self):
-        tc = testchill.chill.BuildChillTestCase(self.config(build_cuda=True, script_lang='python'))
+        tc = testchill.chill.BuildChillTestCase(self.config(build_cuda=True, script_lang='python'), self.build_options)
         self.assertEqual(tc.config.name(), 'cuda-chill-python')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-cuda-chill')
@@ -111,7 +113,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
 
     def test_chill_release(self):
-        tc = testchill.chill.BuildChillTestCase(self.config_rel())
+        tc = testchill.chill.BuildChillTestCase(self.config_rel(), self.build_options)
         self.assertEqual(tc.config.name(), 'chill-release')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_rel_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend')
@@ -122,7 +124,7 @@ class TestChillTestCases(unittest.TestCase):
             runtest([tc])
     
     def test_cudachill_release(self):
-        tc = testchill.chill.BuildChillTestCase(self.config_rel(build_cuda=True))
+        tc = testchill.chill.BuildChillTestCase(self.config_rel(build_cuda=True), self.build_options)
         self.assertEqual(tc.config.name(), 'cuda-chill-release')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_rel_dir)
         self.assertEqual(tc.config.env()['CUDACHILL'], 'true')
@@ -145,7 +147,7 @@ class TestChillTestCases(unittest.TestCase):
             runchilltest([tc])
     
     def test_chill_coverage(self):
-        tc = testchill.chill.BuildChillTestCase(self.config(), options={'coverage':True})
+        tc = testchill.chill.BuildChillTestCase(self.config(), options={'coverage':True}, coverage_set=testchill.gcov.GcovSet())
         self.assertEqual(tc.config.name(), 'chill')
         self.assertEqual(tc.config.env()['OMEGAHOME'], self.omega_dev_dir)
         self.assertEqual(tc.config.make_depend_target(), 'depend-chill')

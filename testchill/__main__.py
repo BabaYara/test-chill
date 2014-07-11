@@ -360,6 +360,12 @@ def main():
     test.pretty_print_results(results)
     util.rmtemp()
     coverage.pretty_print()
+    
+    with open('coverage.pickle', 'wb') as f:
+        pickle.dump(coverage, f, 2)
+    with open('testresults.pickle', 'wb') as f:
+        pickle.dump(results, f, 2)
+    
     if any(s.failed() or s.errored() for s in results):
         sys.exit(1)
 
