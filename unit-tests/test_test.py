@@ -292,7 +292,7 @@ class TestTest(unittest.TestCase):
     
     def test_pretty_print(self):
         def pretty_print_to_string(results_iter):
-            sio = io.StringIO()
+            sio = util.StringIO()
             test.pretty_print_results(results_iter, outfile=sio)
             return sio.getvalue()
             

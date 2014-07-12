@@ -17,7 +17,8 @@ rules:
     <with-decl-list>:l ',' <with-decl>:decl                 => l + [decl]
     <with-decl>:decl                                        => [decl]
 <with-decl> ::=
-    Identifier:name ':' <expr>:e                            => (name, e)
+    Identifier:name ':' <expr>:e                            => (name, (None, e))
+    <c-type>:ctype Identifier:name ':' <expr>:e             => (name, (ctype, e))
     
 <proc> ::=
     'procedure' <c-type>:rtype Identifier:name '(' <param-list-opt>:plist ')'

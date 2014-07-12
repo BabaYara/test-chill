@@ -158,7 +158,7 @@ test-core: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_
 
 
 .PHONY:
-test-core-%:
+test-core-%: $(STAGING_DIR_BIN)
 	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_$*.py
 
 

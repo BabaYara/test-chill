@@ -1,17 +1,18 @@
 #define AN 3
 #define BM 2
-#define AMBN 5
+#define AMBM 5
 
 /*
+
 <test name='mm_small'>
 
-with {an:3, bm:2, ambn:5, evendist2:lambda i,j: random(-8,8), zero2=lambda i,j: 0}
 procedure void mm(
-    in  float[an][ambn] A = matrix([*,*],evendist2),
-    in  float[ambn][bm] B = matrix([*,*],evendist2),
-    out float[an][bm]   C = matrix([*,*],zero2))
+    in  float[3][5] A = matrix([*,*],lambda i,j: random(-8,8)),
+    in  float[5][2] B = matrix([*,*],lambda i,j: random(-8,8)),
+    out float[3][2] C = matrix([*,*],lambda i,j: 0))
 
 </test>
+
 */
 
 void mm(float A[AN][AMBN], float B[AMBN][BM], float C[AN][BM]) {

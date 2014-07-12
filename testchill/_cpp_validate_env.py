@@ -19,7 +19,11 @@ _runtime_globals = dict({
 def _evalexpr(expr, target_type, bindings):
     glbls = dict(bindings)
     glbls.update(_runtime_globals)
-    expr = _pyast.Expression(expr.compile_expr(target_type.getpytype()))
+    if target_type is None:
+        pytype = None
+    else:
+        pytype = target_type.getpytype()
+    expr = _pyast.Expression(expr.compile_expr(pytype))
     expr = _pyast.fix_missing_locations(expr)
     return eval(compile(expr, '<string>', 'eval'), glbls)
 
@@ -29,7 +33,27 @@ def _addbindings(expr, binding_frame):
     return expr
 
 
-class _CppType(object):
+class _TreeNode(object):
+    def print_tree(self, stream=None, indent=0):
+        strname = type(self).__name__
+        stream.write(strname + ':\n')
+        indent += 2
+        for k,v in vars(self).items():
+            if isinstance(v, _TreeNode):
+                stream.write(('{}{}:'.format(' '*indent, k)))
+                v.print_tree(stream, indent + len(k))
+            elif isinstance(v, list):
+                stream.write(('{}{}: [\n'.format(' '*indent, k)))
+                for itm in v:
+                    if isinstance(itm, _TreeNode):
+                        stream.write(' '*indent)
+                        itm.print_tree(stream, indent + len(k) + 1)
+                    else:
+                        stream.write('{}{}\n'.format(' '*(indent + 1), str(itm)))
+            else:
+                stream.write(('{}{}: {}\n'.format(' '*indent, k, str(v))))
+
+class _CppType(_TreeNode):
     def __init__(self):
         pass
     
@@ -250,7 +274,7 @@ class _CppReferenceType(_CppType):
         return dims, fmt_data
 
 
-class _Parameter(object):
+class _Parameter(_TreeNode):
     def __init__(self, name, cpptype, direction, init_expr=None):
         self.name = name
         self.direction = direction
@@ -293,14 +317,14 @@ class _Parameter(object):
             return self._generated
 
 
-class _Procedure(object):
+class _Procedure(_TreeNode):
     def __init__(self, name, rtype, parameters):
         self.name = name
         self.rtype = rtype
         self.parameters = parameters
         self.binding_stack = []
         self._bindings = None
-        self._params_ordered = False
+        self._params_orderd = False
     
     def _order_params(self):
         if not self._params_orderd:
@@ -312,7 +336,7 @@ class _Procedure(object):
         if self._bindings is None:
             new_bindings = dict()
             for binding_frame in self.binding_stack:
-                for name, ctype, expr in binding_frame.items():
+                for name, (ctype, expr) in binding_frame.items():
                     value = _evalexpr(expr, ctype, local_bindings)
                     new_bindings[name] = value
                     local_bindings[name] = value
@@ -320,15 +344,17 @@ class _Procedure(object):
         local_bindings.update(self._bindings)
         return local_bindings
     
-    def generatedata(self, direction, global_bindings=dict()):
+    def generatedata(self, direction, global_bindings=None):
         self._order_params()
+        if global_bindings is None:
+            global_bindings = dict()
         bindings = self._compute_bindings(global_bindings)
         for param in (p for p in self.parameters if p.direction == direction):
-            p_name, p_statictype, p_dims, p_data = param.generate(global_bindings)
+            p_name, p_statictype, p_dims, p_data = param.generatedata(bindings)
             yield p_name, p_statictype, p_dims, p_data
 
 
-class _Expr(object):
+class _Expr(_TreeNode):
     def __init__(self):
         pass
     
@@ -455,16 +481,20 @@ class _LambdaExpr(_Expr):
         self.expr = expr
     
     def compile_expr(self, target_type):
-        assert hasattr(target_type, 'paramtypes')
-        assert hasattr(target_type, 'exprtype')
+        if target_type is None:
+            exprtype = None
+        else:
+            assert hasattr(target_type, 'paramtypes')
+            assert hasattr(target_type, 'exprtype')
+            exprtype = target_type.exprtype
         if _chill_util.python_version_major == 2:
             return _pyast.Lambda(
                 _pyast.arguments([_pyast.Name(p, _pyast.Param()) for p in self.params], None, None, []),
-                self.expr.compile_expr(target_type.exprtype))
+                self.expr.compile_expr(exprtype))
         else:
             return _pyast.Lambda(
                 _pyast.arguments([_pyast.arg(p, None) for p in self.params], None, None, [], None, None, [], []),
-                self.expr.compile_expr(target_type.exprtype))
+                self.expr.compile_expr(exprtype))
     
     def getfreevars(self, glbls):
         new_glbls = set(glbls)
@@ -481,9 +511,12 @@ class _InvokeExpr(_Expr):
         self.parameters = parameters
     
     def compile_expr(self, target_type):
-        lt = _pylambdatype([None for p in self.parameters], target_type)
+        if target_type is None:
+            lt = None
+        else:
+            lt = _pylambdatype([None for p in self.parameters], target_type)
         return _pyast.Call(
-                self.func.compile_expr(_pylambdatype),
+                self.func.compile_expr(lt),
                 [p.compile_expr(None) for p in self.parameters],
                 [],
                 None,
@@ -527,6 +560,7 @@ class _MatrixGenerator(_Generator):
             return _pylambdatype([int for d in self.dimensions], target_type)
     
     def compile_expr(self, target_type):
+        assert target_type is not None
         dims = self._compile_dims(target_type)
         ltype = self._lambda_type(target_type)
         
@@ -570,6 +604,8 @@ class _RandomExpr(_Expr):
             return _pyast.Call(_pyast.Name('int', _pyast.Load()),[self.expr.compile_expr(float)],[],None,None)
         elif target_type == float:
             return self.expr.compile_expr(target_type)
+        elif target_type is None:
+            return self.expr.compile_expr(None)
         assert False
     
     def __str__(self):

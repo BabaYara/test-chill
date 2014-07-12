@@ -25,6 +25,7 @@ class _TagExtractor(HTMLParser):
         }
     
     def __init__(self, tagname):
+        HTMLParser.__init__(self)
         self.tagname = tagname
         self._readin = False
         self._value = ''
@@ -32,11 +33,12 @@ class _TagExtractor(HTMLParser):
     def handle_starttag(self, tag, attrs):
         if tag == self.tagname:
             self._readin = True
-            self._attrs = attrs
+            self._attrs = dict(attrs)
     
     def handle_endtag(self, tag):
-        if tag == tagname:
+        if tag == self.tagname:
             self._readin = False
+        self._tag_list.append((self._value, self._attrs))
     
     def handle_data(self, txt):
         if self._readin:
@@ -47,8 +49,9 @@ class _TagExtractor(HTMLParser):
         reader = cls(tagname)
         reader._readin = False
         reader._value = ''
+        reader._tag_list = []
         reader.feed(txt)
-        return (reader.value, self._attrs)
+        return reader._tag_list
     
     @classmethod
     def _get_commentstyles(cls, ext):
@@ -88,7 +91,7 @@ class _TagExtractor(HTMLParser):
         with open(os.path.join(wd, filename), 'r') as f:
             txt = f.read()
         ext = filename.split('.')[-1]
-        return cls._parse(tagname, '\n'.join(cls._commented_lines(txt, ext)))
+        return cls._parse(tagname, '\n'.join(cls._commented(txt, ext)))
 
 extract_tag = _TagExtractor.extract_tag
 

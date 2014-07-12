@@ -6,6 +6,7 @@ import random
 import struct
 import unittest
 
+import testchill
 import testchill._cpp_validate_env as validate_env
 import testchill.cpp_validate
 import testchill.util

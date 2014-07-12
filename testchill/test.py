@@ -10,13 +10,6 @@ import traceback
 
 from . import util
 
-if util.python_version_major == 3:
-    StringIO = io.StringIO
-else:
-    import StringIO
-    StringIO = StringIO.StringIO
-
-
 
 class TestResult(object):
     """
@@ -198,7 +191,7 @@ class UnhandledExceptionTestResult(TestResult):
         self.exception_type = exc_type
         self.exception_value = exc_value
         if not exc_traceback is None:
-            sio = StringIO()
+            sio = util.StringIO()
             traceback.print_exception(self.exception_type, self.exception_value, exc_traceback, file=sio)
             self.exception_message = sio.getvalue()
         else:

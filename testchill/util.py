@@ -17,6 +17,11 @@ python_version = sysconfig.get_python_version()
 python_version_major = int(sysconfig.get_python_version().split('.')[0])
 python_version_minor = int(sysconfig.get_python_version().split('.')[1])
 
+if python_version_major == 2:
+    from StringIO import StringIO
+else:
+    from io import StringIO
+
 _temp_dirs = []
 _temp_files = []
 
