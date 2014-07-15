@@ -324,12 +324,12 @@ class _Procedure(_TreeNode):
         self.parameters = parameters
         self.binding_stack = []
         self._bindings = None
-        self._params_orderd = False
+        self._params_orderd = None
+        self._invoke_str = '{}({});'.format(self.name, ','.join([p.name for p in parameters]))
     
     def _order_params(self):
         if not self._params_orderd:
-            self.parameters = list(_Parameter.order_by_freevars(self.parameters))
-        self._params_ordered = True
+            self._params_orderd = list(_Parameter.order_by_freevars(self.parameters))
     
     def _compute_bindings(self, global_bindings):
         local_bindings = dict(global_bindings)
@@ -349,9 +349,27 @@ class _Procedure(_TreeNode):
         if global_bindings is None:
             global_bindings = dict()
         bindings = self._compute_bindings(global_bindings)
-        for param in (p for p in self.parameters if p.direction == direction):
+        for param in (p for p in self._params_orderd if p.direction == direction):
             p_name, p_statictype, p_dims, p_data = param.generatedata(bindings)
+            #TODO: add binding
             yield p_name, p_statictype, p_dims, p_data
+    
+    def generatedecls(self, bindings):
+        for p_name, p_statictype, p_dims, p_data in self.generatedata('in', bindings):
+            yield p_statictype.get_cdecl_stmt(p_name)
+        for p_name, p_statictype, p_dims, p_data in self.generatedata('out', bindings):
+            yield p_statictype.get_cdecl_stmt(p_name)
+    
+    def generatereads(self, direction, stream, bindings):
+        for p_name, p_statictype, p_dims, p_data in self.generatedata(direction, bindings):
+            yield p_statictype.get_cread_stmt(p_name, stream, p_dims)
+    
+    def generatewrites(self, stream, bindings):
+        for p_name, p_statictype, p_dims, p_data in self.generatedata('out', bindings):
+            yield p_statictype.get_cwrite_stmt(p_name, stream, p_dims)
+    
+    def getinvokestr(self):
+        return self._invoke_str
 
 
 class _Expr(_TreeNode):

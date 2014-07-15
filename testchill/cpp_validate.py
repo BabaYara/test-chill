@@ -115,11 +115,11 @@ def _format_insertion_dict(test_proc, src_path, defines):
         return {
                 'defines'      : '\n'.join(['#define {} {}'.format(k,v) for k,v in defines]),
                 'test-proc'    : src_file.read(),
-                'declarations' : '\n'.join(test_proc.generatedecls()),
-                'read-in'      : '\n'.join(test_proc.generatereads(test_proc, 'in', 'datafile_initialize')),
-                'read-out'     : '\n'.join(test_proc.generatereads(test_proc, 'out', 'datafile_initialize')),
-                'run'          : test_proc.invoke_str(),
-                'write-out'    : '\n'.join(test_proc.generatewrites(test_proc, 'datafile_out')),
+                'declarations' : '\n'.join(test_proc.generatedecls(defines)),
+                'read-in'      : '\n'.join(test_proc.generatereads('in', 'datafile_initialize', defines)),
+                'read-out'     : '\n'.join(test_proc.generatereads('out', 'datafile_initialize', defines)),
+                'run'          : test_proc.getinvokestr(),
+                'write-out'    : '\n'.join(test_proc.generatewrites('datafile_out', defines)),
             }
 
 def _write_generated_code(test_proc, src_path, defines, dest_filename, wd):

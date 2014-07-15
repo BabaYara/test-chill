@@ -70,8 +70,24 @@ class TestCppValidate(unittest.TestCase):
                 (('mm_one_with.testproc', 'mm.cc', {}), listtodata(list(range(15)) + list(range(10)) + [0]*6)),
             ]
         self._format_insertion_dict_test_data = [
-                (('mm_one.testproc', 'mm_one.cc', {}),      dict()),
-                (('mm_one_with.testproc', 'mm_one.cc', {}), dict()),
+                (('mm_one.testproc', 'mm_one.cc', {}),
+                    {
+                        'run': 'mm(A,B,C);',
+                        'read-out': 'datafile_initialize->read((const char*)&C,(int)(6*sizeof(float)));',
+                        'declarations': 'float A[3][5];\nfloat B[5][2];\nfloat C[3][2];',
+                        'write-out': 'datafile_out->write((const char*)&C,(int)(6*sizeof(float)));',
+                        'defines': '',
+                        'read-in': 'datafile_initialize->read((const char*)&A,(int)(15*sizeof(float)));\ndatafile_initialize->read((const char*)&B,(int)(10*sizeof(float)));'
+                    }),
+                (('mm_one_with.testproc', 'mm_one.cc', {}),
+                    {
+                        'run': 'mm(A,B,C);',
+                        'read-out': 'datafile_initialize->read((const char*)&C,(int)(6*sizeof(float)));',
+                        'declarations': 'float A[3][5];\nfloat B[5][2];\nfloat C[3][2];',
+                        'write-out': 'datafile_out->write((const char*)&C,(int)(6*sizeof(float)));',
+                        'defines': '',
+                        'read-in': 'datafile_initialize->read((const char*)&A,(int)(15*sizeof(float)));\ndatafile_initialize->read((const char*)&B,(int)(10*sizeof(float)));'
+                    }),
             ]
     
     def tearDown(self):
@@ -224,8 +240,11 @@ class TestCppValidate(unittest.TestCase):
             with open(testprocpath, 'r') as f:
                 srcpath = os.path.join(self.cpp_validate_dir, srcfile)
                 testproc = cpp_validate._parse_testproc_script(f.read())
+                #testproc.generatedata('in', defines)
+                #testproc.generatedata('out', defines)
                 return cpp_validate._format_insertion_dict(testproc, srcpath, defines)
                 
         for args, exp in self._format_insertion_dict_test_data:
             val = testfunc(*args)
-            self.assertEqual(val, exp)
+            for k,v in exp.items():
+                self.assertEqual(val[k], v)
