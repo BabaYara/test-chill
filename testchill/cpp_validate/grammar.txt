@@ -99,6 +99,7 @@ rules:
     <dim-expr-list>:l ',' <dim-expr>:e                      => l + [e]
     <dim-expr>:e                                            => [e]
 <dim-expr> ::=
+    eps                                                     => None
     '*'                                                     => None
     <expr>:e                                                => e
 <id-list-opt> ::=

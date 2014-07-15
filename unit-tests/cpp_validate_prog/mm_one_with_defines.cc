@@ -18,7 +18,7 @@ void mm(float A[AN][AMBN], float B[AMBN][BM], float C[AN][BM]) {
     for(i = 0; i < AN; i++) {
         for(j = 0; j < BM; j++) {
             for(k = 0; k < AMBN; k++) {
-                C[i][j] += A[i][k] + B[k][j];
+                C[i][j] += A[i][k] * B[k][j];
             }
         }
     }

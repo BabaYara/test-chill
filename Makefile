@@ -85,7 +85,7 @@ DIRTY_EXTS=pyc o log pickle
 DIRTY_FILES=$(foreach de,$(DIRTY_EXTS),$(shell find . -name "*.$(de)"))
 DIRTY_DIRS=$(shell find . -name '__pycache__' -and -type d) $(STAGING_DIR) pylang
 
-CORE_TESTS:=util gcov _cpp_validate_env test __main__ _extract
+CORE_TESTS:=_extract util gcov _cpp_validate_env cpp_validate test __main__
 OMEGA_TESTS:=omega
 CHILL_TESTS:=chill
 

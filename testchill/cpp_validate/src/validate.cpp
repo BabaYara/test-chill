@@ -1,24 +1,25 @@
 #include <ctime>
-#include <cstdio>
+#include <fstream>
 
-//# test proc
+//# defines
+//# test-proc
 
 int main(int argc, char** argv) {
+    //# declerations
     
-    //# read in
-    //# read out
+    std::ifstream datafile_initialize = std::ifstream(argv[1]);
+    //# read-in
+    //# read-out
+    datafile_intialize.close();
     
     std::clock_t start_time = std::clock();
-    float five_seconds = CLOCKS_PER_SECOND * 5.0;
-    int run_count = 0;
-    while ((std::clock() - start_time) < five_seconds) {
-        //# run
-        run_count++;
-    }
+    //# run
     std::clock_t end_time = std::clock();
     
-    //# write out
+    std::ofstream datafile_out = std::ofstream(argv[2]);
+    //# write-out
+    datafile_out.close();
     
-    printf("(%f,%d)", ((float)(end_time-start_time))/CLOCKS_PER_SECOND, run_count);
+    std::printf("(%d,)", (int)(end_time-start_time));
     return 0;
 }

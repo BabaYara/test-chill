@@ -62,12 +62,15 @@ def mkdir_p(directory, temp=False, **kwargs):
 def set_tempfile(filename):
     """
     Add a file to a list of temp files
+    @param filename The full path to a temparary file.
     """
     _temp_files.append(filename)
 
 def withtmp(wtfunc, rdfunc):
     """
     Perform some operation using a temporary file.
+    @param wtfunc A function that writes to the temparary file
+    @param rdfybc A function that reads from the temparary file
     """
     with tempfile.TemporaryFile() as f:
         wtfunc(f)
@@ -87,6 +90,19 @@ def rmtemp():
         if os.path.exists(temp_dir):
             shell('rm', ['-rf', temp_dir])
         _temp_dirs.remove(temp_dir)
+
+def mktemp(mode=None):
+    """
+    Create a temparary file. Returns a two-tuple with an open file object and the filename.
+    """
+    fd, name = tempfile.mkstemp()
+    _temp_files.append(name)
+    if mode is None:
+        os.close(fd)
+        return name
+    else:
+        return os.fdopen(fd, mode), name
+    
 
 ### Misc Util ###
 

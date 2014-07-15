@@ -328,7 +328,7 @@ class _Procedure(_TreeNode):
     
     def _order_params(self):
         if not self._params_orderd:
-            self.parameters = _Parameter.order_by_freevars(self.parameters)
+            self.parameters = list(_Parameter.order_by_freevars(self.parameters))
         self._params_ordered = True
     
     def _compute_bindings(self, global_bindings):
