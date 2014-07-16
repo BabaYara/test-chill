@@ -135,7 +135,7 @@ class Test_CppValidateEnv(unittest.TestCase):
                 ((_const_0,_name_x), set(), {'_pyrandom': random, 'x':4}, int, {'x'}, int(random.random()*4)),
                 ((_name_x,_const_4), set(), {'_pyrandom': random, 'x':0}, int, {'x'}, int(random.random()*4)),
             ]
-        ### data for generating ###
+        ### data for data generating ###
         _name_ambn = validate_env._NameExpr('ambn')
         _name_an   = validate_env._NameExpr('an')
         _name_bm   = validate_env._NameExpr('bm')
@@ -236,6 +236,20 @@ class Test_CppValidateEnv(unittest.TestCase):
                         (5, 'bm', 'int', 'in', True, set([]))
                     ]),
             ]
+        ### data for code generation ###
+        _float_2d_type = validate_env._CppArrayType(_float_type, [_name_an,_name_ambn])
+        self._CppType_statictype_test_data = [
+                ((_float_2d_type, {'an':2,'ambn':5}), 'float[2][5]')
+            ]
+        self._CppType_get_cdecl_stmt_test_data = [
+                ((_float_2d_type, 'A', {'an':2,'ambn':5}), 'float A[2][5];')
+            ]
+        self._CppType_get_cread_stmt_test_data = [
+                ((_float_2d_type, 'A', {'an':2,'ambn':5}, 'datafile_initialize', [10,1]), 'datafile_initialize.read((char*)A, 10*sizeof(float));')
+            ]
+        self._CppType_get_cwrite_stmt_test_data = [
+                ((_float_2d_type, 'A', {'an':2,'ambn':5}, 'datafile_out', [10,1]), 'datafile_out.write((char*)A, 10*sizeof(float));')
+            ]
     
     def run_expr_test_data(self, ctor, test_data):
         for ctor_args, fv_bindings, rt_bindings, target_type, exp_freevars, exp_value in test_data:
@@ -322,10 +336,36 @@ class Test_CppValidateEnv(unittest.TestCase):
             self.assertEqual(dim_val, dim_exp)
             self.assertEqual(bytes_val, bytes_exp)
     
+    def test__CppType_statictype(self):
+        def testfunc(t, bindings):
+            return str(t.statictype(bindings))
+        for args, typename in self._CppType_statictype_test_data:
+            self.assertEqual(testfunc(*args), typename)
+    
+    def test__CppType_get_cdecl_stmt(self):
+        def testfunc(t, param_name, bindings):
+            return t.statictype(bindings).get_cdecl_stmt(param_name)
+        for args, decl_exp in self._CppType_get_cdecl_stmt_test_data:
+            decl_val = testfunc(*args)
+            self.assertEqual(decl_val, decl_exp)
+    
+    def test__CppType_get_cread_stmt(self):
+        def testfunc(t, param_name, bindings, stream, dims):
+            return t.statictype(bindings).get_cread_stmt(param_name, stream, dims)
+        for args, decl_exp in self._CppType_get_cread_stmt_test_data:
+            decl_val = testfunc(*args)
+            self.assertEqual(decl_val, decl_exp)
+    
+    def test__CppType_get_cwrite_stmt(self):
+        def testfunc(t, param_name, bindings, stream, dims):
+            return t.statictype(bindings).get_cwrite_stmt(param_name, stream, dims)
+        for args, decl_exp in self._CppType_get_cwrite_stmt_test_data:
+            decl_val = testfunc(*args)
+            self.assertEqual(decl_val, decl_exp)
+    
     def test__Parameter_generatedata(self):
         def testfunc(param, glbls):
             return param.generatedata(glbls)
-        print('')
         for args, expected in self._Parameter_generatedata_test_data:
             name_val, type_val, dims_val, data_val = testfunc(*args)
             name_exp, type_exp, dims_exp, data_exp = expected
@@ -334,3 +374,4 @@ class Test_CppValidateEnv(unittest.TestCase):
             self.assertEqual(str(type_val), type_exp)
             self.assertEqual(dims_val, dims_exp)
             self.assertEqual(data_val, data_exp)
+    

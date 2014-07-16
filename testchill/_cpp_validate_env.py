@@ -131,10 +131,10 @@ class _CppPrimitiveType(_CppType):
         return '{} {};'.format(self.cppname, param_name)
     
     def get_cread_stmt(self, param_name, istream_name, dims):
-        return '{}->read((const char*)&{}, (int){});'.format(istream_name, param_name, self.size_expr)
+        return '{}.read((const char*)&{}, {});'.format(istream_name, param_name, self.size_expr)
     
     def get_cwrite_stmt(self, param_name, ostream_name, dims):
-        return '{}->write((const char*)&{}, (int){});'.format(ostream_name, param_name, self.size_expr)
+        return '{}.write((const char*)&{}, {});'.format(ostream_name, param_name, self.size_expr)
 
 
 class _CppVoidType(_CppType):
@@ -205,8 +205,8 @@ class _CppArrayType(_CppType):
         length = _pyfunctools.reduce(lambda a,v: a*v, self.dimensions)
         #TODO: use dims
         if isinstance(self.basetype, _CppPrimitiveType):
-            size_expr = '({}*{})'.format(length, self.basetype.size_expr)
-            return '{}->read((const char*)&{},(int){});'.format(istream_name, param_name, size_expr)
+            size_expr = '{}*{}'.format(length, self.basetype.size_expr)
+            return '{}.read((char*){}, {});'.format(istream_name, param_name, size_expr)
         else:
             raise NotImplementedError
     
@@ -214,8 +214,8 @@ class _CppArrayType(_CppType):
         length = _pyfunctools.reduce(lambda a,v: a*v, self.dimensions)
         #TODO: use dims
         if isinstance(self.basetype, _CppPrimitiveType):
-            size_expr = '({}*{})'.format(length, self.basetype.size_expr)
-            return '{}->write((const char*)&{},(int){});'.format(ostream_name, param_name, size_expr)
+            size_expr = '{}*{}'.format(length, self.basetype.size_expr)
+            return '{}.write((char*){}, {});'.format(ostream_name, param_name, size_expr)
         else:
             raise NotImplementedError
 

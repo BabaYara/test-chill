@@ -1,25 +1,29 @@
-#include <ctime>
+#include <time.h>
 #include <fstream>
+#include <cstdio>
 
 //# defines
 //# test-proc
 
 int main(int argc, char** argv) {
-    //# declerations
+    //# declarations
+    timespec start_time;
+    timespec end_time;
     
-    std::ifstream datafile_initialize = std::ifstream(argv[1]);
+    std::ifstream datafile_initialize(argv[1]);
     //# read-in
     //# read-out
-    datafile_intialize.close();
+    datafile_initialize.close();
     
-    std::clock_t start_time = std::clock();
+    clock_gettime(CLOCK_REALTIME, &start_time);
     //# run
-    std::clock_t end_time = std::clock();
+    clock_gettime(CLOCK_REALTIME, &end_time);
     
-    std::ofstream datafile_out = std::ofstream(argv[2]);
+    std::ofstream datafile_out(argv[2]);
     //# write-out
     datafile_out.close();
     
-    std::printf("(%d,)", (int)(end_time-start_time));
+    double time_diff = (end_time.tv_sec - start_time.tv_sec) + (end_time.tv_nsec - start_time.tv_nsec)/1000000000.0;
+    std::printf("(%f,)", time_diff);
     return 0;
 }

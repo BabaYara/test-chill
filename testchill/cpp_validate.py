@@ -113,7 +113,7 @@ def _generate_initial_data(test_proc, srcfile, defines, wd=os.getcwd()):
 def _format_insertion_dict(test_proc, src_path, defines):
     with open(src_path, 'r') as src_file:
         return {
-                'defines'      : '\n'.join(['#define {} {}'.format(k,v) for k,v in defines]),
+                'defines'      : '\n'.join(['#define {} {}'.format(k,v) for k,v in defines.items()]),
                 'test-proc'    : src_file.read(),
                 'declarations' : '\n'.join(test_proc.generatedecls(defines)),
                 'read-in'      : '\n'.join(test_proc.generatereads('in', 'datafile_initialize', defines)),
@@ -124,7 +124,7 @@ def _format_insertion_dict(test_proc, src_path, defines):
 
 def _write_generated_code(test_proc, src_path, defines, dest_filename, wd):
     insertion_dict = _format_insertion_dict(test_proc, src_path, defines)
-    dest_file_path = os.path.join(wd, dst_filename)
+    dest_file_path = os.path.join(wd, dest_filename)
     with open('testchill/cpp_validate/src/validate.cpp', 'r') as template_file:
         with open(dest_file_path, 'w') as destfile:
             template_text = template_file.read()
@@ -143,9 +143,7 @@ def run_from_src(control_src, test_src, wd=os.getcwd()):
     test_src_path = os.path.join(wd, test_src)
     for test_proc, attrs in _parse_testproc_iter(control_src, wd):
         defines = eval(attrs['define'])
-        datafile_in  = _generate_data(test_proc, 'in', control_src, defines, wd=wd)
-        control_datafile_out = _generate_data(test_proc, 'out', control_src, defines, wd=wd)
-        test_datafile_out = _generate_data(test_proc, 'out', test_src, defines, wd=wd)
-        control_src_path = _write_generated_code(test_proc, control_src, defines, 'control.cc', wd)
-        test_src_path = _write_generated_code(test_proc, test_src, defines, 'test.cc', wd)
-        yield attrs['name'], _compile_run_test_validate_time(control_src_path, test_src_path, datafile_in, control_datafile_out, test_datafile_out)
+        datafile = _generate_initial_data(test_proc, control_src, defines, wd=wd)
+        gen_control_src = _write_generated_code(test_proc, control_src, defines, 'gen_control.cc', wd)
+        gen_test_src = _write_generated_code(test_proc, test_src, defines, 'gen_test.cc', wd)
+        yield attrs['name'], _compile_run_test_validate_time(gen_control_src, gen_test_src, datafile)

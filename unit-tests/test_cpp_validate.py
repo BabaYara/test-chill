@@ -73,21 +73,27 @@ class TestCppValidate(unittest.TestCase):
                 (('mm_one.testproc', 'mm_one.cc', {}),
                     {
                         'run': 'mm(A,B,C);',
-                        'read-out': 'datafile_initialize->read((const char*)&C,(int)(6*sizeof(float)));',
+                        'read-out': 'datafile_initialize.read((char*)C, 6*sizeof(float));',
                         'declarations': 'float A[3][5];\nfloat B[5][2];\nfloat C[3][2];',
-                        'write-out': 'datafile_out->write((const char*)&C,(int)(6*sizeof(float)));',
+                        'write-out': 'datafile_out.write((char*)C, 6*sizeof(float));',
                         'defines': '',
-                        'read-in': 'datafile_initialize->read((const char*)&A,(int)(15*sizeof(float)));\ndatafile_initialize->read((const char*)&B,(int)(10*sizeof(float)));'
+                        'read-in': 'datafile_initialize.read((char*)A, 15*sizeof(float));\ndatafile_initialize.read((char*)B, 10*sizeof(float));'
                     }),
                 (('mm_one_with.testproc', 'mm_one.cc', {}),
                     {
                         'run': 'mm(A,B,C);',
-                        'read-out': 'datafile_initialize->read((const char*)&C,(int)(6*sizeof(float)));',
+                        'read-out': 'datafile_initialize.read((char*)C, 6*sizeof(float));',
                         'declarations': 'float A[3][5];\nfloat B[5][2];\nfloat C[3][2];',
-                        'write-out': 'datafile_out->write((const char*)&C,(int)(6*sizeof(float)));',
+                        'write-out': 'datafile_out.write((char*)C, 6*sizeof(float));',
                         'defines': '',
-                        'read-in': 'datafile_initialize->read((const char*)&A,(int)(15*sizeof(float)));\ndatafile_initialize->read((const char*)&B,(int)(10*sizeof(float)));'
+                        'read-in': 'datafile_initialize.read((char*)A, 15*sizeof(float));\ndatafile_initialize.read((char*)B, 10*sizeof(float));'
                     }),
+            ]
+        self._write_generated_code_test_data = [
+                (('mm_one.testproc', 'mm_one.cc', 'control.cc', {}), 'mm_one_out.cc')
+            ]
+        self.run_from_src_test_data = [
+                (('mm_three_basic.cc', 'mm_three_slow.cc', self.staging_dir_wd), None)
             ]
     
     def tearDown(self):
@@ -237,14 +243,37 @@ class TestCppValidate(unittest.TestCase):
     def test__format_insertion_dict(self):
         def testfunc(testprocfile, srcfile, defines):
             testprocpath = os.path.join(self.cpp_validate_dir, testprocfile)
+            srcpath = os.path.join(self.cpp_validate_dir, srcfile)
             with open(testprocpath, 'r') as f:
-                srcpath = os.path.join(self.cpp_validate_dir, srcfile)
                 testproc = cpp_validate._parse_testproc_script(f.read())
                 #testproc.generatedata('in', defines)
                 #testproc.generatedata('out', defines)
-                return cpp_validate._format_insertion_dict(testproc, srcpath, defines)
+            return cpp_validate._format_insertion_dict(testproc, srcpath, defines)
                 
         for args, exp in self._format_insertion_dict_test_data:
             val = testfunc(*args)
             for k,v in exp.items():
                 self.assertEqual(val[k], v)
+    
+    def test__write_generated_code(self):
+        def testfunc(testprocfile, srcname, destname, defines):
+            srcpath = os.path.join(self.cpp_validate_dir, srcname)
+            with open(os.path.join(self.cpp_validate_dir, testprocfile),'r') as f:
+                testproc = cpp_validate._parse_testproc_script(f.read())
+            return cpp_validate._write_generated_code(testproc, srcpath, defines, destname, self.staging_dir_wd)
+        for args, exp_path in self._write_generated_code_test_data:
+            val_path = testfunc(*args)
+            util.set_tempfile(val_path)
+            exp_path = os.path.join(self.cpp_validate_dir, exp_path)
+            with open(val_path, 'r') as valfile:
+                with open(exp_path, 'r') as expfile:
+                    self.assertEqual(valfile.read().splitlines(), expfile.read().splitlines())
+    
+    def test_run_from_src(self):
+        for args, expected in self.run_from_src_test_data:
+            control_src, test_src, wd = args
+            control_src = os.path.join(self.cpp_validate_dir, control_src)
+            test_src = os.path.join(self.cpp_validate_dir, test_src)
+            val = list(cpp_validate.run_from_src(control_src,test_src,wd))
+            self.assertEqual(val, expected)
+            
