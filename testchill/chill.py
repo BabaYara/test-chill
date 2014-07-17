@@ -7,6 +7,7 @@ import os.path
 from . import gcov
 from . import test
 from . import util
+from . import cpp_validate
 
 
 class ChillConfig(object):
@@ -211,6 +212,7 @@ class RunChillTestCase(test.SequencialTestCase):
             self.add_subtest('run-script', self.run_script)
         if self.options['compile-gensrc']:
             self.add_subtest('compile-generated-src', self.compile_gensrc)
+        self.add_subtest('check-run-script-validate', self.check_run_script_validate)
         if self.options['check-run-script-stdout']:
             self.add_subtest('check-run-script-stdout', self.check_run_script_stdout)
             with open('.'.join(self.chill_script_path.split('.')[0:-1] + ['stdout']), 'r') as f:
@@ -245,6 +247,10 @@ class RunChillTestCase(test.SequencialTestCase):
         if self.options['coverage']:
             self.coverage_set.addcoverage(self.config.name(), self.name)
     
+    # -             - #
+    # - Chill Tests - #
+    # -             - #
+    
     def compile_src(self, tc):
         """
         Attempts to compile the source file before any transformation is performed. Fails if gcc fails.
@@ -267,6 +273,17 @@ class RunChillTestCase(test.SequencialTestCase):
         Attempts to compile the generated source file. Fails if gcc fails.
         """
         self.out['compile_gensrc.stdout'] = util.shell('gcc', ['-c', self.chill_gensrc], wd=self.wd)
+        return tc.make_pass()
+    
+    def check_run_script_validate(self, tc):
+        """
+        Generate test data and run both the original source and generated source against it.
+        Fail if any test procedure generates different output.
+        """
+        for name, (is_valid, is_faster) in cpp_validate.run_from_src(self.chill_src, self.chill_gensrc, wd=self.wd):
+            self.out['check_run_script_validate.{}'.format(name)] = (is_valid, is_faster)
+            if not is_valid:
+                return tc.make_fail('test procedure {} returned invalid results.'.format(name))
         return tc.make_pass()
     
     def check_run_script_stdout(self, tc):

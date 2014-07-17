@@ -3,7 +3,7 @@ terminals:
     NumericLiteral '[0-9]+(\.[0-9]+)?'
     Comment        '\#([^\x0a])*'
     WS             '\s+'
-ignore: WS, <NL>
+ignore: WS, <NL>, Comment
 rules:
 <proc-unit> ::=
     <with-stmt>:w                                           => w
@@ -57,10 +57,16 @@ rules:
 <direction> ::=
     'in'                                                    => 'in'
     'out'                                                   => 'out'
+    'in' 'out'                                              => 'inout'
+    'out' 'in'                                              => 'inout'
+    eps                                                     => 'inout'
 
 
 <expr> ::=
     <add-expr>:e                                            => e
+    'lambda' <id-list-opt>:params ':' <expr>:e              => LambdaExpr(params, e)
+    'matrix' '(' <dim-list-expr>:d ',' <expr>:e ')'         => MatrixGenerator(d, e)
+    'matrix' <named-dim-list-expr>:dims <expr>:e            => MatrixGenerator([d[1] for d in dims], LambdaExpr([d[0] for d in dims], e))
 <add-expr> ::=
     <add-expr>:l '+' <mul-expr>:r                           => BinExpr(l, '+', r)
     <add-expr>:l '-' <mul-expr>:r                           => BinExpr(l, '-', r)
@@ -83,8 +89,6 @@ rules:
     Identifier:name                                         => NameExpr(name)
     NumericLiteral:num                                      => ConstantExpr(num)
     'random' '(' <expr>:mn ',' <expr>:mx ')'                => RandomExpr(mn, mx)
-    'matrix' '(' <dim-list-expr>:d ',' <expr>:e ')'         => MatrixGenerator(d, e)
-    'lambda' <id-list-opt>:params ':' <expr>:e              => LambdaExpr(params, e)
     <term-expr>:f '(' <expr-list-opt>:l ')'                 => InvokeExpr(f, l)
     <term-expr>:n '.' Identifier:attr                       => AttributeExpr(n, attr)
 <expr-list-opt> ::=
@@ -108,5 +112,13 @@ rules:
 <id-list> ::=
     <id-list>:l ',' Identifier:ident                        => l + [ident]
     Identifier:ident                                        => [ident]
+<named-dim-list-expr> ::=
+    '[' <named-dim-expr-list>:l ']'                         => l
+<named-dim-expr-list> ::=
+    <named-dim-expr-list>:l ',' <named-dim-expr>:e          => l + [e]
+    <named-dim-expr>:e                                      => [e]
+<named-dim-expr> ::=
+    Identifier:name                                         => (name, None)
+    Identifier:name ':' <expr>:e                            => (name, e)
     
 

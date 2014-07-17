@@ -38,7 +38,8 @@ class _TagExtractor(HTMLParser):
     def handle_endtag(self, tag):
         if tag == self.tagname:
             self._readin = False
-        self._tag_list.append((self._value, self._attrs))
+            self._tag_list.append((self._value, self._attrs))
+            self._value = ''
     
     def handle_data(self, txt):
         if self._readin:

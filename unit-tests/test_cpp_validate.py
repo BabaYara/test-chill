@@ -93,7 +93,8 @@ class TestCppValidate(unittest.TestCase):
                 (('mm_one.testproc', 'mm_one.cc', 'control.cc', {}), 'mm_one_out.cc')
             ]
         self.run_from_src_test_data = [
-                (('mm_three_basic.cc', 'mm_three_slow.cc', self.staging_dir_wd), None)
+                (('mm_three_basic.cc', 'mm_three_slow.cc', self.staging_dir_wd), [('small', (True, False)), ('medium', (True, False)), ('big', (True, False))]),
+                (('mm_three_slow.cc', 'mm_three_basic.cc', self.staging_dir_wd), [('small', (True, True)), ('medium', (True, True)), ('big', (True, True))]),
             ]
     
     def tearDown(self):

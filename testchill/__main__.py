@@ -359,7 +359,7 @@ def main():
     results = list(test.run(args_to_tclist(coverage_set=coverage)))
     test.pretty_print_results(results)
     util.rmtemp()
-    coverage.pretty_print()
+    #coverage.pretty_print()
     
     with open('coverage.pickle', 'wb') as f:
         pickle.dump(coverage, f, 2)

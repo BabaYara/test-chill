@@ -94,19 +94,19 @@ def _run_test_validate_time(control_obj_path, test_obj_path, datain_path):
 def _compile_run_test_validate_time(control_src_path, test_src_path, datain_path):
     control_obj_path = '.'.join(control_src_path.split('.')[:-1])
     test_obj_path = '.'.join(test_src_path.split('.')[:-1])
+    util.set_tempfile(control_obj_path)
+    util.set_tempfile(test_obj_path)
     _compile_gpp(control_src_path, control_obj_path)
     _compile_gpp(test_src_path, test_obj_path)
     test_validate, test_time = _run_test_validate_time(control_obj_path, test_obj_path, datain_path)
-    util.shell('rm', [control_obj_path])
-    util.shell('rm', [test_obj_path])
     return test_validate, test_time
 
 def _generate_initial_data(test_proc, srcfile, defines, wd=os.getcwd()):
     filename = os.path.join(wd, os.path.basename(srcfile)) + '.data'
     with open(filename, 'wb') as f:
-        for p_name, p_type, p_dims, p_data in test_proc.generatedata('in', defines):
+        for p_name, p_type, p_dims, p_data in test_proc.generatedata(['in', 'inout'], defines):
             f.write(p_data)
-        for p_name, p_type, p_dims, p_data in test_proc.generatedata('out', defines):
+        for p_name, p_type, p_dims, p_data in test_proc.generatedata(['out'], defines):
             f.write(p_data)
     return filename
 
@@ -116,8 +116,8 @@ def _format_insertion_dict(test_proc, src_path, defines):
                 'defines'      : '\n'.join(['#define {} {}'.format(k,v) for k,v in defines.items()]),
                 'test-proc'    : src_file.read(),
                 'declarations' : '\n'.join(test_proc.generatedecls(defines)),
-                'read-in'      : '\n'.join(test_proc.generatereads('in', 'datafile_initialize', defines)),
-                'read-out'     : '\n'.join(test_proc.generatereads('out', 'datafile_initialize', defines)),
+                'read-in'      : '\n'.join(test_proc.generatereads(['in','inout'], 'datafile_initialize', defines)),
+                'read-out'     : '\n'.join(test_proc.generatereads(['out'], 'datafile_initialize', defines)),
                 'run'          : test_proc.getinvokestr(),
                 'write-out'    : '\n'.join(test_proc.generatewrites('datafile_out', defines)),
             }
@@ -143,7 +143,13 @@ def run_from_src(control_src, test_src, wd=os.getcwd()):
     test_src_path = os.path.join(wd, test_src)
     for test_proc, attrs in _parse_testproc_iter(control_src, wd):
         defines = eval(attrs['define'])
-        datafile = _generate_initial_data(test_proc, control_src, defines, wd=wd)
-        gen_control_src = _write_generated_code(test_proc, control_src, defines, 'gen_control.cc', wd)
-        gen_test_src = _write_generated_code(test_proc, test_src, defines, 'gen_test.cc', wd)
+        datafile = _generate_initial_data(test_proc, control_src_path, defines, wd=wd)
+        gen_control_src = _write_generated_code(test_proc, control_src_path, defines, 'gen_control.cc', wd)
+        gen_test_src = _write_generated_code(test_proc, test_src_path, defines, 'gen_test.cc', wd)
         yield attrs['name'], _compile_run_test_validate_time(gen_control_src, gen_test_src, datafile)
+
+def parse_defines_iter(src, wd=os.getcwd()):
+    for txt, attrs in util.extract_tag('test', src, wd):
+        if 'define' in attrs.keys():
+            yield eval(attrs['define'])
+

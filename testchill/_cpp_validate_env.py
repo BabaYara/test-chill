@@ -344,28 +344,28 @@ class _Procedure(_TreeNode):
         local_bindings.update(self._bindings)
         return local_bindings
     
-    def generatedata(self, direction, global_bindings=None):
+    def generatedata(self, direction_list, global_bindings=None):
         self._order_params()
         if global_bindings is None:
             global_bindings = dict()
         bindings = self._compute_bindings(global_bindings)
-        for param in (p for p in self._params_orderd if p.direction == direction):
+        for param in (p for p in self._params_orderd if p.direction in direction_list):
             p_name, p_statictype, p_dims, p_data = param.generatedata(bindings)
             #TODO: add binding
             yield p_name, p_statictype, p_dims, p_data
     
     def generatedecls(self, bindings):
-        for p_name, p_statictype, p_dims, p_data in self.generatedata('in', bindings):
+        for p_name, p_statictype, p_dims, p_data in self.generatedata(['in','out','inout'], bindings):
             yield p_statictype.get_cdecl_stmt(p_name)
-        for p_name, p_statictype, p_dims, p_data in self.generatedata('out', bindings):
-            yield p_statictype.get_cdecl_stmt(p_name)
+        #for p_name, p_statictype, p_dims, p_data in self.generatedata('out', bindings):
+        #    yield p_statictype.get_cdecl_stmt(p_name)
     
-    def generatereads(self, direction, stream, bindings):
-        for p_name, p_statictype, p_dims, p_data in self.generatedata(direction, bindings):
+    def generatereads(self, direction_list, stream, bindings):
+        for p_name, p_statictype, p_dims, p_data in self.generatedata(direction_list, bindings):
             yield p_statictype.get_cread_stmt(p_name, stream, p_dims)
     
     def generatewrites(self, stream, bindings):
-        for p_name, p_statictype, p_dims, p_data in self.generatedata('out', bindings):
+        for p_name, p_statictype, p_dims, p_data in self.generatedata(['inout', 'out'], bindings):
             yield p_statictype.get_cwrite_stmt(p_name, stream, p_dims)
     
     def getinvokestr(self):

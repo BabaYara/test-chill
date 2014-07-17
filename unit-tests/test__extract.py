@@ -1,13 +1,18 @@
 import ast
 import unittest
 
-import testchill._extract
+import testchill._extract as _extract
+import testchill.util as util
 
 class TestExtraction(unittest.TestCase):
     def setUp(self):
-        self.test_extract_data = [
+        self._TagExtractor_parse_test_data = [
+                (('a',''),                      []),
+                (('a','x<a>yy</a>z'),           [('yy', {})]),
+                (('a','x<a>yy</a>z<a>ww</a>g'), [('yy', {}), ('ww',{})]),
+                (('a','x<a>yy</a>z<b>ww</b>g'), [('yy', {})])
             ]
-        self.test__commented_data = [
+        self._commented_test_data = [
                 (('no comment here','cc'), []),
                 (('one comment //xxx\n','cc'), ['xxx']),
                 (('two comments //xxx\nunrelated//yyy\n', 'cc'), ['xxx','yyy']),
@@ -20,11 +25,24 @@ class TestExtraction(unittest.TestCase):
     
     def test__commented(self):
         def run(txt, ext):
-            return list(testchill._extract._TagExtractor._commented(txt, ext))
-        for args, res in self.test__commented_data:
+            return list(_extract._TagExtractor._commented(txt, ext))
+        for args, res in self._commented_test_data:
             self.assertEqual(run(*args), res)
     
-    def test_extract(self):
-        for args, res in self.test_extract_data:
-            self.assertEqual(_TagExtractor.extract_tag(*args), res)
-        
+    #def test_extract(self):
+    #    def testfunc(tag, txt):
+    #        temp = util.mktemp()
+    #        with open(temp, 'w') as f:
+    #            f.write(txt)
+    #        extracted = _extract._TagExtractor.extract_tag(tag, temp)
+    #        util.rmtemp()
+    #        return extracted
+    #        
+    #    for args, res in self.test_extract_data:
+    #        self.assertEqual(testfunc(*args), res)
+    
+    def test__TagExtractor_parse(self):
+        def testfunc(tag, txt):
+            return _extract._TagExtractor._parse(tag, txt)
+        for args, exp in self._TagExtractor_parse_test_data:
+            self.assertEqual(testfunc(*args), exp)

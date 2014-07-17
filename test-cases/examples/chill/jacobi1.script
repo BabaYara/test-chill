@@ -5,7 +5,7 @@
 #
 
 source: jacobi1.c
-procedure: main
+procedure: jacobi
 format : rose
 loop: 0
 
