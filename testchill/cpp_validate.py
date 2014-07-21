@@ -91,15 +91,19 @@ def _run_test_validate_time(control_obj_path, test_obj_path, datain_path):
     test_time, = eval(util.shell(os.path.abspath(test_obj_path), [datain_path, test_dataout_path]))
     return _test_validate(control_dataout_path, test_dataout_path), _test_time(control_time, test_time)
 
-def _compile_run_test_validate_time(control_src_path, test_src_path, datain_path):
-    control_obj_path = '.'.join(control_src_path.split('.')[:-1])
-    test_obj_path = '.'.join(test_src_path.split('.')[:-1])
-    util.set_tempfile(control_obj_path)
-    util.set_tempfile(test_obj_path)
-    _compile_gpp(control_src_path, control_obj_path)
-    _compile_gpp(test_src_path, test_obj_path)
-    test_validate, test_time = _run_test_validate_time(control_obj_path, test_obj_path, datain_path)
-    return test_validate, test_time
+#def _run_test_validate_time(control_obj_path, test_obj_path, datain_path, wd):
+    #control_obj_path = '.'.join(control_src_path.split('.')[:-1])
+    #test_obj_path = '.'.join(test_src_path.split('.')[:-1])
+    
+    
+    
+    #util.set_tempfile(control_obj_path)
+    #util.set_tempfile(test_obj_path)
+    #_compile_gpp(control_src_path, control_obj_path)
+    #_compile_gpp(test_src_path, test_obj_path)
+    
+    #test_validate, test_time = _run_test_validate_time(control_obj_path, test_obj_path, datain_path)
+    #return test_validate, test_time
 
 def _generate_initial_data(test_proc, srcfile, defines, wd=os.getcwd()):
     filename = os.path.join(wd, os.path.basename(srcfile)) + '.data'
@@ -138,15 +142,21 @@ def _write_generated_code(test_proc, src_path, defines, dest_filename, wd):
             destfile.write(desttext)
     return dest_file_path
 
-def run_from_src(control_src, test_src, wd=os.getcwd()):
+def run_from_src(control_src, test_src, build_control_func, build_test_func, wd=os.getcwd()):
     control_src_path = os.path.join(wd, control_src)
     test_src_path = os.path.join(wd, test_src)
+    gen_control_obj_path = os.path.join(wd, 'control_obj')
+    gen_test_obj_path = os.path.join(wd, 'test_obj')
     for test_proc, attrs in _parse_testproc_iter(control_src, wd):
+        util.set_tempfile(gen_control_obj)
+        util.set_tempfile(gen_test_obj)
         defines = eval(attrs['define'])
         datafile = _generate_initial_data(test_proc, control_src_path, defines, wd=wd)
         gen_control_src = _write_generated_code(test_proc, control_src_path, defines, 'gen_control.cc', wd)
         gen_test_src = _write_generated_code(test_proc, test_src_path, defines, 'gen_test.cc', wd)
-        yield attrs['name'], _compile_run_test_validate_time(gen_control_src, gen_test_src, datafile)
+        build_control_func(gen_control_src, gen_control_obj)
+        build_test_func(gen_test_src, gen_test_obj)
+        yield attrs['name'], _run_test_validate_time(gen_control_obj, gen_test_obj, datafile)
 
 def parse_defines_iter(src, wd=os.getcwd()):
     for txt, attrs in util.extract_tag('test', src, wd):

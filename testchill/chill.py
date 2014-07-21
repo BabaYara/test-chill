@@ -50,6 +50,40 @@ class ChillConfig(object):
     def make_args(self):
         return self._get(3)
     
+    def _buildfunc(self, cc, link=True):
+        if not link:
+            compile_args = ['-c']
+        elif link and cc == 'nvcc':
+            compile_args = ['-L/usr/local/cuda/lib64/lib', '-lcuda', '-lcudart']
+        else:
+            compile_args = []
+        
+        def build(src, dest, args=[], wd=None):
+            if wd is None:
+                wd = os.path.dirname(src)
+            dest = os.path.join(wd, dest)
+            stdout = util.shell(cc, compile_args + args + [src, '-o', dest], wd=wd)
+            return dest, stdout
+        return build
+    
+    def compile_src_func(self):
+        return self._buildfunc('gcc', False)
+    
+    def compile_gensrc_func(self):
+        if self.build_cuda:
+            return self._buildfunc('nvcc', False)
+        else:
+            return self._buildfunc('gcc', False)
+    
+    def build_src_func(self):
+        return self._buildfunc('gcc')
+    
+    def build_gensrc_func(self):
+        if self.build_cuda:
+            return self._buildfunc('nvcc')
+        else:
+            return self._buildfunc('gcc')
+    
     def env(self):
         chill_env = {'OMEGAHOME':self.omega_dir}
         if self.version == 'release' and self.build_cuda:
@@ -186,17 +220,23 @@ class RunChillTestCase(test.SequencialTestCase):
         
         assert isinstance(config, ChillConfig)
         
+        super(RunChillTestCase,self).__init__(config.name() + ':' + os.path.basename(chill_script))
+        
         self.config = config
+        self.wd = wd if (wd != None) else os.getcwd()
+        
         self.chill_src_path = os.path.abspath(chill_src)
         self.chill_script_path = os.path.abspath(chill_script)
-        self.wd = wd if (wd != None) else os.getcwd()
-         
-        super(RunChillTestCase,self).__init__(self.config.name() + ':' + os.path.basename(chill_script))
-        
         self.chill_bin = os.path.join(self.config.bin_dir, self.config.name())
         self.chill_src = os.path.basename(self.chill_src_path)
         self.chill_script = os.path.basename(self.chill_script_path)
         self.chill_gensrc = self._get_gensrc(self.chill_src)
+        
+        self.compile_src_func = self.config.compile_src_func()
+        self.compile_gensrc_func = self.config.compile_gensrc_func()
+        self.build_src_func = self.config.build_src_func()
+        self.build_gensrc_func = self.config.build_gen_func()
+        
         self._set_options(options, coverage_set)
 
     def _set_options(self, options, coverage_set=None):
@@ -255,7 +295,8 @@ class RunChillTestCase(test.SequencialTestCase):
         """
         Attempts to compile the source file before any transformation is performed. Fails if gcc fails.
         """
-        self.out['compile_src.stdout'] = util.shell('gcc', ['-c', self.chill_src], wd=self.wd)
+        #self.out['compile_src.stdout'] = util.shell('gcc', ['-c', self.chill_src], wd=self.wd)
+        _, self.out['compile_src.stdout'] = self.compile_src_func(self.chill_src, util.mktemp(), self.wd)
         return tc.make_pass()
     
     def run_script(self, tc):
@@ -272,7 +313,8 @@ class RunChillTestCase(test.SequencialTestCase):
         """
         Attempts to compile the generated source file. Fails if gcc fails.
         """
-        self.out['compile_gensrc.stdout'] = util.shell('gcc', ['-c', self.chill_gensrc], wd=self.wd)
+        #self.out['compile_gensrc.stdout'] = util.shell('gcc', ['-c', self.chill_gensrc], wd=self.wd)
+        _, self.out['compile_gensrc.stdout'] = self.compile_gensrc_func(self.chill_gensrc_path, util.mktemp(), self.wd)
         return tc.make_pass()
     
     def check_run_script_validate(self, tc):
@@ -280,7 +322,7 @@ class RunChillTestCase(test.SequencialTestCase):
         Generate test data and run both the original source and generated source against it.
         Fail if any test procedure generates different output.
         """
-        for name, (is_valid, is_faster) in cpp_validate.run_from_src(self.chill_src, self.chill_gensrc, wd=self.wd):
+        for name, (is_valid, is_faster) in cpp_validate.run_from_src(self.chill_src, self.chill_gensrc, self.build_src_func, self.build_gensrc_func, wd=self.wd):
             self.out['check_run_script_validate.{}'.format(name)] = (is_valid, is_faster)
             if not is_valid:
                 return tc.make_fail('test procedure {} returned invalid results.'.format(name))
