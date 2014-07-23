@@ -28,6 +28,8 @@ class ChillConfig(object):
         self.omega_dir = omega_dir
         self.chill_dir = chill_dir
         self.bin_dir = bin_dir
+        if self.script_lang is None:
+            self.script_lang = self.default_script_lang()
     
     def _get(self, index):
         return ChillConfig._config_map[self.version + '-' + str(self.build_cuda) + '-' + self.script_lang][index]
@@ -171,6 +173,8 @@ class BuildChillTestCase(test.TestCase):
         """
         depend_target = self.config.make_depend_target()
         target = self.config.make_target()
+        util.shell('make', ['clean'], wd=self.config.chill_dir)
+        util.shell('make', ['veryclean'], wd=self.config.chill_dir)
         util.shell('make', [depend_target] + [self.build_args], env=self.build_env, wd=self.config.chill_dir)
         util.shell('make', [target] + [self.build_args], env=self.build_env, wd=self.config.chill_dir)
         return self.make_pass()
@@ -231,11 +235,12 @@ class RunChillTestCase(test.SequencialTestCase):
         self.chill_src = os.path.basename(self.chill_src_path)
         self.chill_script = os.path.basename(self.chill_script_path)
         self.chill_gensrc = self._get_gensrc(self.chill_src)
+        self.chill_gensrc_path = os.path.join(self.wd, self.chill_gensrc)
         
         self.compile_src_func = self.config.compile_src_func()
         self.compile_gensrc_func = self.config.compile_gensrc_func()
         self.build_src_func = self.config.build_src_func()
-        self.build_gensrc_func = self.config.build_gen_func()
+        self.build_gensrc_func = self.config.build_gensrc_func()
         
         self._set_options(options, coverage_set)
 
@@ -296,7 +301,7 @@ class RunChillTestCase(test.SequencialTestCase):
         Attempts to compile the source file before any transformation is performed. Fails if gcc fails.
         """
         #self.out['compile_src.stdout'] = util.shell('gcc', ['-c', self.chill_src], wd=self.wd)
-        _, self.out['compile_src.stdout'] = self.compile_src_func(self.chill_src, util.mktemp(), self.wd)
+        _, self.out['compile_src.stdout'] = self.compile_src_func(self.chill_src, util.mktemp(), wd=self.wd)
         return tc.make_pass()
     
     def run_script(self, tc):
@@ -305,7 +310,7 @@ class RunChillTestCase(test.SequencialTestCase):
         """
         # look for cudaize.lua for cuda-chill
         if self.config.build_cuda and not os.path.exists(os.path.join(self.wd, 'cudaize.lua')):
-            return test.TestResult.error(test.FailedTestResult, tc, reason='cudaize.lua was missing from the working directory.')
+            return test.TestResult.make_error(test.FailedTestResult, tc, reason='cudaize.lua was missing from the working directory.')
         self.out['run_script.stdout'] = util.shell(self.chill_bin, [self.chill_script], wd=self.wd)
         return tc.make_pass()
     
@@ -314,7 +319,7 @@ class RunChillTestCase(test.SequencialTestCase):
         Attempts to compile the generated source file. Fails if gcc fails.
         """
         #self.out['compile_gensrc.stdout'] = util.shell('gcc', ['-c', self.chill_gensrc], wd=self.wd)
-        _, self.out['compile_gensrc.stdout'] = self.compile_gensrc_func(self.chill_gensrc_path, util.mktemp(), self.wd)
+        _, self.out['compile_gensrc.stdout'] = self.compile_gensrc_func(self.chill_gensrc_path, util.mktemp(), wd=self.wd)
         return tc.make_pass()
     
     def check_run_script_validate(self, tc):

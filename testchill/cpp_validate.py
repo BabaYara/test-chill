@@ -58,13 +58,13 @@ def _parse_testproc_iter(srcfile, wd=os.getcwd()):
         if attrs['lang'] == 'script':
             yield _parse_testproc_script(txt), attrs
 
-def _compile_gpp(src, dest):
-    """
-    Compile a signle C++ source file into an executable object.
-    @param src Source file path.
-    @param dest Object file path.
-    """
-    util.shell('g++', ['-o', dest, src, '-lrt'])
+#def _compile_gpp(src, dest):
+#    """
+#    Compile a signle C++ source file into an executable object.
+#    @param src Source file path.
+#    @param dest Object file path.
+#    """
+#    util.shell('g++', ['-o', dest, src, '-lrt'])
 
 def _test_time(control_time, test_time):
     """
@@ -148,14 +148,14 @@ def run_from_src(control_src, test_src, build_control_func, build_test_func, wd=
     gen_control_obj_path = os.path.join(wd, 'control_obj')
     gen_test_obj_path = os.path.join(wd, 'test_obj')
     for test_proc, attrs in _parse_testproc_iter(control_src, wd):
-        util.set_tempfile(gen_control_obj)
-        util.set_tempfile(gen_test_obj)
         defines = eval(attrs['define'])
         datafile = _generate_initial_data(test_proc, control_src_path, defines, wd=wd)
         gen_control_src = _write_generated_code(test_proc, control_src_path, defines, 'gen_control.cc', wd)
         gen_test_src = _write_generated_code(test_proc, test_src_path, defines, 'gen_test.cc', wd)
-        build_control_func(gen_control_src, gen_control_obj)
-        build_test_func(gen_test_src, gen_test_obj)
+        gen_control_obj, _ = build_control_func(gen_control_src, gen_control_obj)
+        gen_test_obj, _ = build_test_func(gen_test_src, gen_test_obj)
+        util.set_tempfile(gen_control_obj)
+        util.set_tempfile(gen_test_obj)
         yield attrs['name'], _run_test_validate_time(gen_control_obj, gen_test_obj, datafile)
 
 def parse_defines_iter(src, wd=os.getcwd()):

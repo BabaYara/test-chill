@@ -135,31 +135,31 @@ test: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_SRC) 
 	@echo "Note: This target tests the test suite it's self, not chill"
 	@echo "To test chill, run python -m testchill ..."
 	@echo "-----------------------------------------------------------"
-	$(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS) $(CORE_TESTS) $(CHILL_TESTS)
-	rm -rf $(STAGING_DIR)
+	- $(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS) $(CORE_TESTS) $(CHILL_TESTS)
+	@ rm -rf $(STAGING_DIR)
 
 
 .PHONY: test-chill
 test-chill: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC)
-	$(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS) $(CHILL_TESTS)
-	rm -rf $(STAGING_DIR)
+	- $(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS) $(CHILL_TESTS)
+	@ rm -rf $(STAGING_DIR)
 
 
 .PHONY: test-omega
 test-omega: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC)
-	$(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS)
-	rm -rf $(STAGING_DIR)
+	- $(EXPORT) $(PYTHON) -m unittest $(OMEGA_TESTS)
+	@ rm -rf $(STAGING_DIR)
 
 
 .PHONY: test-core
 test-core: $(STAGING_DIR_BIN) $(OMEGA_DEV_SRC) $(OMEGA_RELEASE_SRC) $(CHILL_DEV_SRC) $(CHILL_RELEASE_SRC) make-omega
-	$(EXPORT) $(PYTHON) -m unittest $(CORE_TESTS)
-	rm -rf $(STAGING_DIR)
+	- $(EXPORT) $(PYTHON) -m unittest $(CORE_TESTS)
+	@ rm -rf $(STAGING_DIR)
 
 
 .PHONY:
 test-core-%: $(STAGING_DIR_BIN)
-	$(EXPORT) $(PYTHON) -m unittest unit-tests/test_$*.py
+	- $(EXPORT) $(PYTHON) -m unittest unit-tests/test_$*.py
 
 
 .PHONY: test-debug
