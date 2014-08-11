@@ -1,3 +1,4 @@
+
 #ifndef N
 #define N 512
 #endif

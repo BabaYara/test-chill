@@ -109,6 +109,10 @@ def make_runchill_testcase(argsns):
     options['check-run-script-stdout'] = argsns.chill_test_check_run_script
     options['coverage'] = argsns.chill_test_coverage
     
+    ### choose interface language from script extension if none is given ###
+    if argsns.chill_script_lang is None:
+        argsns.chill_script_lang = chill.ChillConfig.ext_to_script_lang(chill_script.split('.')[-1])
+    
     config = chill.ChillConfig(
         omega_dir = os.path.abspath(argsns.omega_dir) if argsns.omega_dir != None else None,
         chill_dir = os.path.abspath(argsns.chill_dir) if argsns.chill_dir != None else None,
@@ -355,10 +359,11 @@ def args_to_tclist(args=sys.argv[1:], arg_parser=make_argparser(), argsns=None, 
 
 @util.callonce
 def main():
-    coverage = gcov.GcovSet()
+    #coverage = gcov.GcovSet()
+    coverage=None
     results = list(test.run(args_to_tclist(coverage_set=coverage)))
     test.pretty_print_results(results)
-    util.rmtemp()
+    #util.rmtemp()
     #coverage.pretty_print()
     
     with open('coverage.pickle', 'wb') as f:

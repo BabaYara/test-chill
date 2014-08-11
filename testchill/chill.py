@@ -56,15 +56,16 @@ class ChillConfig(object):
         if not link:
             compile_args = ['-c']
         elif link and cc == 'nvcc':
-            compile_args = ['-L/usr/local/cuda/lib64/lib', '-lcuda', '-lcudart']
+            compile_args = ['-L/usr/local/cuda/lib64/lib', '-lcuda', '-lcudart', '-lstdc++', '-lrt']
         else:
-            compile_args = []
+            compile_args = ['-lstdc++', '-lrt']
         
-        def build(src, dest, args=[], wd=None):
+        def build(src, dest, args=[], defines={}, wd=None):
             if wd is None:
                 wd = os.path.dirname(src)
+            args += ['-D{}={}'.format(k,v) for k, v in defines.items()]
             dest = os.path.join(wd, dest)
-            stdout = util.shell(cc, compile_args + args + [src, '-o', dest], wd=wd)
+            stdout = util.shell(cc, args + [src, '-o', dest] + compile_args, wd=wd)
             return dest, stdout
         return build
     
@@ -129,7 +130,7 @@ class BuildChillTestCase(test.TestCase):
     """
     
     default_options = {
-            'coverage': True   # compile for coverage
+            'coverage': False   # compile for coverage
         }
     
     def __init__(self, config, options={}, coverage_set=None):
@@ -289,7 +290,7 @@ class RunChillTestCase(test.SequencialTestCase):
         util.shell('rm', ['-f', self.chill_src], wd=self.wd)
         util.shell('rm', ['-f', self.chill_script], wd=self.wd)
         util.shell('rm', ['-f', self.chill_gensrc], wd=self.wd)
-        if self.options['coverage']:
+        if self.options['coverage'] and self.coverage_set is not None:
             self.coverage_set.addcoverage(self.config.name(), self.name)
     
     # -             - #
