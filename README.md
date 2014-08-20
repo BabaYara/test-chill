@@ -58,13 +58,13 @@ testchill is a Python module, and can be run like any other Python module:
    
    - `--build-coverage | --no-build-coverage`
    
-    `--build-coverage` will build chill to work with gcov.  
-    `--no-build-coverage` will build chill normally.  
-    It is on by default.
+     `--build-coverage` will build chill to work with gcov.  
+     `--no-build-coverage` will build chill normally.  
+     It is on by default.
    
-- <h4> `chill-testcase ...`
+- <h4> `chill-testcase <chill-script> <chill-src>...`
 
-   Run a chill tests script
+   Run a chill test script
 
 - <h4> batch
 - <h4> local
