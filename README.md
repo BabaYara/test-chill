@@ -13,9 +13,22 @@ Running testchill
 ===============
 
 testchill is a Python module, and can be run like any other Python module:  
-`python -m testchill <suite-args>* <sub-command> <sub-command-args>*`
+`python -m testchill <suite-args>* <sub-command> <sub-command-args>*`  
+
+Arguments common to all sub commands:  
+- `-w <working-directory>`
+  Sets the working directory where testchill will compile and run test scripts. If not set, the current working directory will be used.  
+- `-R <Rose directory>`
+  ROSEHOME environment variable for building omega. If not set, the current ROSEHOME environment variable will be used.  
+- `-C <chill directory>`
+  Sets the path to chill. If not set, the current CHILLHOME environment variable will be used.  
+- `-O <omega directory>`
+  Sets the path to omega. If not set, the current OMEGAHOME environment variable will be used.  
+- `-b <binary directory>`
+  A directory were all chill binary files will be placed after being compiled. The chill directory will be used by default.  
 
 
+Subcommands for running individual tests:  
 
 To test a local working copy of chill (from the development branch):  
 ------------------------------------------------------------ 
