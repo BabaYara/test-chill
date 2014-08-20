@@ -50,7 +50,7 @@ testchill is a Python module, and can be run like any other Python module:
    
    - `-i {script | lua | python}` or `--interface-lang {script | lua | python}`
    
-     Set the interface language chill will be build for.
+     Set the interface language chill will be build for.  
      `script` will build chill with the original chill script language.  
      `lua` will build chill with lua as the interface language.  
      `python` will build chill with python as the interface language.  
@@ -58,11 +58,11 @@ testchill is a Python module, and can be run like any other Python module:
    
    - `--build-coverage | --no-build-coverage`
    
-    `--build-coverage` will build chill to work with gcov.
-    `--no-build-coverage` will build chill normally.    
+    `--build-coverage` will build chill to work with gcov.  
+    `--no-build-coverage` will build chill normally.  
     It is on by default.
    
-- <h4> `chill-testcase
+- <h4> `chill-testcase ...`
 
    Run a chill tests script
 
