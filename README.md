@@ -38,21 +38,29 @@ testchill is a Python module, and can be run like any other Python module:
 
    Build chill. It will fail if the build process returns non zero.  
    Optional arguments are:  
-   - `-v {release | dev}`
+   - `-v {release | dev}` or `--chill-branch {release | dev}`
    
-     `release` will build the old release version, and `dev` will build the current development version.
+     `release` will build the old release version, and `dev` will build the current development version.  
      `dev` is used by default.
    
-   - `-u | -c`
+   - `-u | -c` or `--target-cuda | --target-c`
    
-     `-c` will build chill, and `-u` will build cuda-chill.
+     `-c` will build chill, and `-u` will build cuda-chill.  
      `-c` is used by default.
    
-   - `i {script | lua | python}`
+   - `-i {script | lua | python}` or `--interface-lang {script | lua | python}`
    
+     Set the interface language chill will be build for.
      `script` will build chill with the original chill script language.  
      `lua` will build chill with lua as the interface language.  
-     `python` will build chill with python as the interface language.
+     `python` will build chill with python as the interface language.  
+     By default, `script` is used for chill and `lua` is used for cuda-chill.
+   
+   - `--build-coverage | --no-build-coverage`
+   
+    `--build-coverage` will build chill to work with gcov.
+    `--no-build-coverage` will build chill normally.    
+    It is on by default.
    
 - <h4> `chill-testcase
 
