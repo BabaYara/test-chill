@@ -150,6 +150,7 @@ The most basic subcommands run the testsuite are [`local`](README.md#-local) and
   Checkout the latest version of omega and chill, compile both and test chill.  
   Arguments:  
   - `<svn-username>`
+    
     Svn username.  
   
 
