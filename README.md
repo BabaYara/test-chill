@@ -3,7 +3,7 @@
 Submoduling!
 
 ## Description  
-TODO: better description
+TODO: better description  
 testchill is a Python module that runs a series of tests to aid in the development and maintence of CHiLL.
 testchill tests that chill compiles successfully, that scripts can be run without error, and that they generate compilable code.
 It can also optionally test optimized code for correctness and provide code coverage.  
@@ -39,7 +39,7 @@ testchill is a Python module, and can be run like any other Python module:
 - <h4> `build-chill-testcase ...`
 
    Build chill. It will fail if the build process returns non zero.  
-   Optional arguments are:  
+   Optional arguments:  
    - `-v {release | dev}` or `--chill-branch {release | dev}`
    
      `release` will build the old release version, and `dev` will build the current development version.  
@@ -56,7 +56,7 @@ testchill is a Python module, and can be run like any other Python module:
      `script` will build chill with the original chill script language.  
      `lua` will build chill with lua as the interface language.  
      `python` will build chill with python as the interface language.  
-     By default, `script` is used for chill and `lua` is used for cuda-chill.
+     By default, `script` is used for chill and `lua` is used for cuda-chill.  
    
    - `--build-coverage | --no-build-coverage`
    
@@ -66,8 +66,60 @@ testchill is a Python module, and can be run like any other Python module:
    
 - <h4> `chill-testcase <chill-script> <chill-src>...`
 
-   Run a chill test script
-
+   Run a chill test script.  
+   Arguments:  
+   - `chill-script`
+     
+     Path to the script file.  
+     
+   - `chill-src`
+     
+     Path to the source file.  
+     
+   Optional arguments:
+   - `-v {release | dev}` or `--chill-branch {release | dev}`
+   
+     `release` will build the old release version, and `dev` will build the current development version.  
+     `dev` is used by default.
+   
+   - `-u | -c` or `--target-cuda | --target-c`
+   
+     `-c` will build chill, and `-u` will build cuda-chill.  
+     `-c` is used by default.
+   
+   - `-i {script | lua | python}` or `--interface-lang {script | lua | python}`
+   
+     Set the interface language chill will be build for.  
+     `script` will build chill with the original chill script language.  
+     `lua` will build chill with lua as the interface language.  
+     `python` will build chill with python as the interface language.  
+     By default, `script` is used for chill and `lua` is used for cuda-chill.  
+     
+   - `--compile-src | --no-compile-src`
+     
+     Turns source compilation test on or off. If on, the source file will be compiled prior to transormation.  
+     On by default.  
+     
+   - `--run-script | --no-run-script`
+     
+     If on, the script file will be run.  
+     On by default.  
+     
+   - `--compile-gensrc | --no-compile-gensrc`
+     
+     If on, the generated source file will be compiled.  
+     On by default.  
+     
+   - `--check-run-script | --no-check-run-script`
+     
+     If on, the generated object file will be run. If there are any validation tests, each one will be compiled and run.  
+     On by default.  
+     
+   - `--test-coverage | --no-test-coverage`
+     
+     If on, coverage data will be compiled during the run-script test.  
+     On by default.  
+   
 - <h4> batch
 - <h4> local
 - <h4> repo
