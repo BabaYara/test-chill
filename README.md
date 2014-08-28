@@ -1,6 +1,4 @@
-# testchill  
-
-Submoduling!
+# testchill
 
 ## Description  
 TODO: better description  
@@ -13,6 +11,11 @@ It can also optionally test optimized code for correctness and provide code cove
 
 testchill is a Python module, and can be run like any other Python module:  
 `python -m testchill <suite-args>* <sub-command> <sub-command-args>*`  
+
+The most basic subcommands run the testsuite are [`local`] and [`repo`]. `local` runs a set of tests on a local chill source directory, and `repo` will grab the latest version of both omega and chill and run the same set of tests.  
+
+`python -m testchill [-O <path-to-omega>] local <path-to-chill>` If the environment variable $OMEGAHOME is set, the `-O` argument can be ommited.  
+`python -m testchill repo <svn-user-name>`  
 
 ### Arguments common to all sub commands (with the exception of `repo` and `local`):  
 - `-w <working-directory>, --working-dir <working-directory>`
@@ -62,7 +65,7 @@ testchill is a Python module, and can be run like any other Python module:
    
      `--build-coverage` will build chill to work with gcov.  
      `--no-build-coverage` will build chill normally.  
-     It is on by default.
+     It is on by default.  
    
 - <h4> `chill-testcase <chill-script> <chill-src>...`
 
