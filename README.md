@@ -67,7 +67,7 @@ The most basic subcommands run the testsuite are [`local`](README.md#-local) and
      `--no-build-coverage` will build chill normally.  
      It is on by default.  
    
-- <h4> `chill-testcase <chill-script> <chill-src>...`
+- <h4> `chill-testcase <chill-script> <chill-src> ...`
 
    Run a chill test script.  
    Arguments:  
@@ -82,20 +82,20 @@ The most basic subcommands run the testsuite are [`local`](README.md#-local) and
    Optional arguments:
    - `-v {release | dev}` or `--chill-branch {release | dev}`
    
-     `release` will build the old release version, and `dev` will build the current development version.  
+     `release` will run scripts as the old release version, and `dev` will run them  as the current development version.  
      `dev` is used by default.
    
    - `-u | -c` or `--target-cuda | --target-c`
    
-     `-c` will build chill, and `-u` will build cuda-chill.  
+     `-c` will run chill, and `-u` will run cuda-chill.  
      `-c` is used by default.
    
    - `-i {script | lua | python}` or `--interface-lang {script | lua | python}`
    
-     Set the interface language chill will be build for.  
-     `script` will build chill with the original chill script language.  
-     `lua` will build chill with lua as the interface language.  
-     `python` will build chill with python as the interface language.  
+     Set the interface language chill will be run with.  
+     `script` will run chill with the original chill script language.  
+     `lua` will run chill with lua as the interface language.  
+     `python` will run chill with python as the interface language.  
      By default, `script` is used for chill and `lua` is used for cuda-chill.  
      
    - `--compile-src | --no-compile-src`
@@ -123,17 +123,34 @@ The most basic subcommands run the testsuite are [`local`](README.md#-local) and
      If on, coverage data will be compiled during the run-script test.  
      On by default.  
    
-- <h4> batch
-- <h4> local
-- <h4> repo
-
-To test a local working copy of chill (from the development branch):  
------------------------------------------------------------- 
-- Set $OMEGAHOME and compile omega.  
-- Run `python -m testchill local <path-to-chill>`  
-
-To test chill from the repository:  
-------------------------------
-- Run `python -m testchill repo <svn-user-name>`  
+- <h4> `batch <batch-file>`
+   
+   Run a test case list (*.tclist) file. Each line constists of a subcommand to be passed to testchill (including additional `batch` commands).  
+   Arguments:
+   - `<batch-file>`
+     
+     Path to a test case list file.
+   
+- <h4> `local <chill-home> ...`
+  
+  Compile and test a local chill source directory.  
+  Arguments:
+  - `<chill-home>`
+    
+    Path to chill.  
+  
+  Optional arguments:  
+  - `-v {release | dev}` or `--chill-branch {release | dev}`
+   
+     `release` will run scripts as the old release version, and `dev` will run them  as the current development version.  
+     `dev` is used by default.  
+  
+- <h4> `repo <svn-username>`
+  
+  Checkout the latest version of omega and chill, compile both and test chill.  
+  Arguments:  
+  - `<svn-username>`
+    Svn username.  
+  
 
 
