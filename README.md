@@ -12,7 +12,7 @@ It can also optionally test optimized code for correctness and provide code cove
 testchill is a Python module, and can be run like any other Python module:  
 `python -m testchill <suite-args>* <sub-command> <sub-command-args>*`  
 
-The most basic subcommands run the testsuite are [`local`] and [`repo`]. `local` runs a set of tests on a local chill source directory, and `repo` will grab the latest version of both omega and chill and run the same set of tests.  
+The most basic subcommands run the testsuite are [`local`](README.md#-local) and [`repo`](README.md#-repo). `local` runs a set of tests on a local chill source directory, and `repo` will grab the latest version of both omega and chill and run the same set of tests.  
 
 `python -m testchill [-O <path-to-omega>] local <path-to-chill>` If the environment variable $OMEGAHOME is set, the `-O` argument can be ommited.  
 `python -m testchill repo <svn-user-name>`  
