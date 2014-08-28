@@ -1,5 +1,7 @@
 # testchill  
 
+Submoduling!
+
 ## Description  
 TODO: better description
 testchill is a Python module that runs a series of tests to aid in the development and maintence of CHiLL.
